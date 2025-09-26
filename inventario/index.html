@@ -116,13 +116,7 @@ async function apiGet(action){
   const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, { method:'GET' });
   return res.json();
 }
-async function apiPost(action, payload){
-  const res = await fetch(API_URL, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ action, ...payload })
-  });
-  return res.json();
-}
+async function apiPost(action,payload){ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}); return r.json(); }
 
 /* ====== Cloud functions ====== */
 async function cloudGetProducts(){
