@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventario — Librería de Fuego</title>
+<style>
+:root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3;--brand:#ff6a00}
+body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0e1116;border-bottom:1px solid #23262f}
+a{color:#fff;text-decoration:none}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:#111318;border:1px solid #23262f;border-radius:14px;padding:14px}
+h1{font-size:18px;margin:0}
+h2{font-size:14px;margin:0 0 10px 0}
+label{font-size:12px;color:var(--muted)}
+input,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1218;color:var(--text)}
+input::placeholder{color:#677086}
+button{cursor:pointer;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.muted{color:var(--muted);font-size:12px}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
+th{color:#aab3c2}
+.chiplist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{display:inline-flex;gap:6px;align-items:center;background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:4px 8px;font-size:12px}
+.chip button{padding:0 6px;background:#2b3344;border-radius:999px;border:0;color:#cbd5e1;cursor:pointer}
+nav{display:flex;gap:10px}
+.navbtn{padding:8px 12px;border-radius:10px;border:1px solid #2a2f3a;background:#1a1c22}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Inventario — Librería de Fuego</h1>
+  <nav>
+    <a class="navbtn" href="/pos/">Ir a Caja (POS)</a>
+    <a class="navbtn" href="/">Inicio</a>
+  </nav>
+</header>
+
+<main>
+  <section class="card">
+    <h2>Cargar / Editar producto</h2>
+    <div class="row">
+      <input id="invSearch" placeholder="Buscar por título, autor, editorial o código">
+      <button id="exportBtn">Exportar CSV</button>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div><label>Código / ISBN</label><input id="p_code" placeholder="978... o interno"></div>
+      <div><label>Stock</label><input id="p_stock" type="number" min="0" value="0"></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div><label>Título</label><input id="p_title" placeholder="Título del libro"></div>
+      <div><label>Editorial</label><input id="p_editorial" placeholder="Ej: Planeta"></div>
+    </div>
+
+    <div style="margin-top:8px">
+      <label>Autores (agrega de a uno)</label>
+      <div class="row">
+        <input id="author_input" placeholder="Nombre del autor/a">
+        <button id="addAuthorBtn" style="width:auto">+ Autor</button>
+      </div>
+      <div id="authors_chips" class="chiplist"></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div><label>Distribuidor</label><input id="p_distribuidor" placeholder="Ej: Big Sur, Planeta, Zig-Zag"></div>
+      <div><label>Margen % (sobre PVP)</label><input id="p_margin" type="number" min="0" max="100" value="40"></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div><label>Precio Neto ($)</label><input id="p_priceNet" type="number" min="0" value="0"></div>
+      <div><label>PVP con IVA (auto)</label><input id="p_priceGross" type="number" value="0" readonly></div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div><label>Ganancia estimada ($)</label><input id="p_gain" type="number" value="0" readonly></div>
+      <div><label>Costo estimado ($)</label><input id="p_cost" type="number" value="0" readonly></div>
+    </div>
+
+    <div class="row" style="margin-top:10px">
+      <button id="addBtn">Agregar / Actualizar</button>
+      <button id="clearFormBtn">Limpiar</button>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:14px">
+    <h2>Listado</h2>
+    <div style="max-height:360px;overflow:auto;margin-top:8px">
+      <table id="invTable">
+        <thead>
+          <tr>
+            <th>Código</th><th>Título</th><th>Autores</th><th>Editorial</th><th>Distribuidor</th>
+            <th>Stock</th><th>Neto</th><th>PVP</th><th>Margen%</th><th>Ganancia</th><th>Costo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <small class="muted">Se recuerda la relación Editorial → Distribuidor para autocompletar.</small>
+  </section>
+</main>
+
+<script>
+const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0)), num=v=>Number(v)||0;
+const db={getProducts:()=>JSON.parse(localStorage.getItem('products')||'[]'),
+          saveProducts:a=>localStorage.setItem('products',JSON.stringify(a)),
+          getEdMap:()=>JSON.parse(localStorage.getItem('editorial_distrib_map')||'{}'),
+          saveEdMap:o=>localStorage.setItem('editorial_distrib_map',JSON.stringify(o))};
+
+let currentAuthors=[];
+function renderAuthors(){
+  const box=document.getElementById('authors_chips'); box.innerHTML='';
+  currentAuthors.forEach((a,i)=>{
+    const d=document.createElement('div'); d.className='chip';
+    d.innerHTML=`<span>${a}</span><button data-i="${i}">x</button>`; box.appendChild(d);
+  });
+  box.querySelectorAll('button').forEach(b=> b.onclick=()=>{currentAuthors.splice(Number(b.dataset.i),1);renderAuthors();});
+}
+document.getElementById('addAuthorBtn').onclick=()=>{
+  const v=document.getElementById('author_input').value.trim(); if(!v) return;
+  currentAuthors.push(v); document.getElementById('author_input').value=''; renderAuthors();
+};
+
+function recalc(){
+  const net=num(document.getElementById('p_priceNet').value);
+  const pvp=net*(1+IVA); document.getElementById('p_priceGross').value=Math.round(pvp);
+  const m=Math.max(0,Math.min(100,num(document.getElementById('p_margin').value)));
+  const gain=pvp*(m/100), cost=pvp-gain;
+  document.getElementById('p_gain').value=Math.round(gain);
+  document.getElementById('p_cost').value=Math.round(cost);
+}
+['p_priceNet','p_margin'].forEach(id=>document.getElementById(id).addEventListener('input',recalc));
+document.getElementById('p_editorial').addEventListener('blur',()=>{
+  const ed=document.getElementById('p_editorial').value.trim(); if(!ed) return;
+  const map=db.getEdMap(); if(map[ed]) document.getElementById('p_distribuidor').value=map[ed];
+});
+recalc(); renderAuthors();
+
+function refresh(filter=''){
+  const tb=document.querySelector('#invTable tbody'); tb.innerHTML='';
+  let rows=db.getProducts();
+  if(filter){
+    const f=filter.toLowerCase();
+    rows=rows.filter(r=>(r.title||'').toLowerCase().includes(f)||(r.code||'').toLowerCase().includes(f)||
+      (r.editorial||'').toLowerCase().includes(f)||(Array.isArray(r.authors)?r.authors.join(' ').toLowerCase().includes(f):false));
+  }
+  rows.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+  for(const p of rows){
+    const pvp=(p.priceNet||0)*(1+IVA), m=Number(p.marginPct||0), gain=pvp*(m/100), cost=pvp-gain;
+    const authorsTxt=Array.isArray(p.authors)?p.authors.join(' ; '):'';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${p.code||''}</td><td>${p.title||''}</td><td>${authorsTxt}</td><td>${p.editorial||''}</td>
+                  <td>${p.distribuidor||''}</td><td>${p.stock??0}</td><td>$${fmt(p.priceNet||0)}</td>
+                  <td>$${fmt(pvp)}</td><td>${fmt(m)}%</td><td>$${fmt(gain)}</td><td>$${fmt(cost)}</td>`;
+    tb.appendChild(tr);
+  }
+}
+document.getElementById('invSearch').oninput=e=>refresh(e.target.value);
+
+function clearForm(){
+  ['p_code','p_title','p_editorial','p_distribuidor','p_stock','p_priceNet','p_priceGross','p_gain','p_cost'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('p_margin').value='40'; currentAuthors=[]; renderAuthors(); recalc();
+}
+document.getElementById('clearFormBtn').onclick=clearForm;
+
+document.getElementById('addBtn').onclick=()=>{
+  const code=document.getElementById('p_code').value.trim();
+  const title=document.getElementById('p_title').value.trim();
+  if(!code||!title){alert('Completa código y título');return;}
+  const editorial=document.getElementById('p_editorial').value.trim();
+  const distribuidor=document.getElementById('p_distribuidor').value.trim();
+  const stock=num(document.getElementById('p_stock').value);
+  const priceNet=num(document.getElementById('p_priceNet').value);
+  const marginPct=Math.max(0,Math.min(100,num(document.getElementById('p_margin').value)));
+  const rows=db.getProducts(); const i=rows.findIndex(r=>(r.code||'')===code);
+  const prod={code,title,authors:[...currentAuthors],editorial,distribuidor,stock,priceNet,marginPct};
+  if(i>=0) rows[i]={...rows[i],...prod}; else rows.push(prod);
+  db.saveProducts(rows);
+  if(editorial&&distribuidor){ const map=db.getEdMap(); map[editorial]=distribuidor; db.saveEdMap(map); }
+  clearForm(); refresh(document.getElementById('invSearch').value);
+};
+
+document.getElementById('exportBtn').onclick=()=>{
+  const rows=db.getProducts(); const head=['code','title','authors','editorial','distribuidor','stock','priceNet','pvp','marginPct','gain','cost'];
+  const lines=[head.join(',')];
+  for(const p of rows){
+    const pvp=(p.priceNet||0)*(1+IVA), gain=pvp*((p.marginPct||0)/100), cost=pvp-gain;
+    lines.push([JSON.stringify(p.code||''),JSON.stringify(p.title||''),JSON.stringify((p.authors||[]).join(' | ')),
+      JSON.stringify(p.editorial||''),JSON.stringify(p.distribuidor||''),p.stock||0,p.priceNet||0,Math.round(pvp),
+      p.marginPct||0,Math.round(gain),Math.round(cost)].join(','));
+  }
+  const blob=new Blob([lines.join('\n')],{type:'text/csv'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='inventario.csv'; a.click();
+};
+
+refresh();
+</script>
+</body>
+</html>
