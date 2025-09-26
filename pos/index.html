@@ -1,0 +1,64 @@
+<!doctype html>
+});
+}
+document.querySelector('#scanBtn').onclick = ()=>{
+const code = document.querySelector('#scanInput').value.trim();
+if(code){ addToCartByCode(code); document.querySelector('#scanInput').value=''; document.querySelector('#scanInput').focus(); }
+};
+document.querySelector('#pickBtn').onclick = ()=>{
+const t = document.querySelector('#searchTitle').value.trim();
+if(t){ addToCartByTitle(t); document.querySelector('#searchTitle').value=''; }
+};
+
+
+// Finish sale
+document.querySelector('#finishBtn').onclick = ()=>{
+if(cart.size===0){ alert('Carrito vacío'); return; }
+let totalNet=0,totalTax=0,total=0; const items=[];
+for(const it of cart.values()){
+const tax = it.priceNet*IVA*it.qty; const gross = it.priceNet*(1+IVA)*it.qty;
+totalNet += it.priceNet*it.qty; totalTax += tax; total += gross; items.push(it);
+}
+// guardar venta
+const sales = db.sales();
+const sale = {id: (sales.at(-1)?.id||0)+1, date:new Date().toISOString(), items, totalNet, totalTax, total, method: document.querySelector('#payMethod').value};
+sales.push(sale); db.saveSales(sales);
+// descontar stock
+const rows = db.products();
+for(const it of items){ const i = rows.findIndex(r=>r.code===it.code); if(i>=0){ rows[i].stock = Math.max(0,(rows[i].stock||0)-it.qty); } }
+db.saveProducts(rows);
+refreshInventory(document.querySelector('#invSearch').value);
+// imprimir ticket
+printTicket(sale);
+cart.clear(); renderCart();
+};
+
+
+function printTicket(sale){
+const {id,date,items,totalNet,totalTax,total,method} = sale;
+const lines = items.map(it=> `${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`);
+const html = `<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title>
+<style>body{font-family:monospace;padding:8px} h1{font-size:16px;margin:0 0 6px 0} .muted{color:#555}
+hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head><body>
+<h1>Librería de Fuego</h1>
+<div class='muted'>Ticket #${id} — ${new Date(date).toLocaleString('es-CL')}</div>
+<hr/>
+${lines.map(l=>`<div>${l}</div>`).join('')}
+<hr/>
+<div>Neto: $${fmt(totalNet)}</div>
+<div>IVA (19%): $${fmt(totalTax)}</div>
+<div><b>Total: $${fmt(total)}</b></div>
+<div>Pago: ${method}</div>
+<hr/>
+<small>Gracias por tu compra</small>
+</body></html>`;
+const w = window.open('', '_blank', 'width=420,height=600');
+w.document.write(html); w.document.close(); w.focus(); w.print();
+}
+
+
+// init
+refreshInventory(''); renderCart();
+</script>
+</body>
+</html>
