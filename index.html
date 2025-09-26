@@ -1,11 +1,27 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Librería de Fuego</title>
-  </head>
-  <body>
-    <h1>🔥 Bienvenido a la Librería de Fuego</h1>
-    <p>Aquí pronto tendrás tu inventario y caja registradora.</p>
-  </body>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Librería de Fuego</title>
+<style>
+:root{--bg:#0b0c10;--text:#e7ecf3;--muted:#9aa3b2;--brand:#ff6a00}
+html,body{height:100%}
+body{margin:0;background:linear-gradient(180deg,#0b0c10,#0e1116 40%,#0b0c10);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;display:grid;place-items:center}
+.card{max-width:720px;margin:24px;background:#111318;border:1px solid #23262f;border-radius:16px;padding:28px}
+h1{margin:0 0 8px 0}
+p{color:var(--muted)}
+a{color:var(--text)}
+.brand{color:var(--brand)}
+</style>
+</head>
+<body>
+<main class="card">
+<h1>🔥 Librería de Fuego</h1>
+<p>Estamos construyendo una nueva web. Muy pronto habrá catálogo y novedades.
+</p>
+<!-- Deja el enlace oculto si quieres que el POS no sea visible públicamente -->
+<p style="display:none"><a href="/pos/" class="brand">Ir al POS</a></p>
+</main>
+</body>
 </html>
