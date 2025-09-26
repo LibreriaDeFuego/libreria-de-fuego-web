@@ -1,139 +1,34 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>POS — Librería de Fuego (v1.1)</title>
-  <style>
-    :root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3;--brand:#ff6a00;--ok:#22c55e;--bad:#ef4444}
-    body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
-    header{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:12px 16px;background:#0e1116;border-bottom:1px solid #23262f}
-    h1{font-size:18px;margin:0}
-    main{display:grid;grid-template-columns:420px 1fr;gap:16px;padding:16px;max-width:1200px;margin:0 auto}
-    .card{background:var(--card);border:1px solid #23262f;border-radius:14px;padding:14px}
-    .card h2{font-size:14px;margin:0 0 8px 0}
-    label{font-size:12px;color:var(--muted)}
-    input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1218;color:var(--text)}
-    input::placeholder{color:#677086}
-    button{cursor:pointer;font-weight:600}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-    .muted{color:var(--muted);font-size:12px}
-    table{width:100%;border-collapse:separate;border-spacing:0 8px}
-    th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
-    th{color:#aab3c2;font-weight:600}
-    tr{background:#0f1218;border-radius:10px}
-    .chiplist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-    .chip{display:inline-flex;align-items:center;gap:6px;background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:4px 8px;font-size:12px}
-    .chip button{width:auto;padding:0 6px;border-radius:999px;background:#2b3344}
-    .total{font-size:18px;font-weight:800}
-    .inline{display:flex;gap:8px;align-items:center}
-    .right{display:flex;justify-content:space-between;align-items:center}
-    @media (max-width:1000px){main{grid-template-columns:1fr}}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caja (POS) — Librería de Fuego</title>
+<style>
+:root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3}
+body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
+header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0e1116;border-bottom:1px solid #23262f}
+a{color:#fff;text-decoration:none}
+main{max-width:900px;margin:0 auto;padding:16px}
+.card{background:#111318;border:1px solid #23262f;border-radius:14px;padding:14px}
+h1{font-size:18px;margin:0}
+h2{font-size:14px;margin:0 0 10px 0}
+input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1218;color:#e7ecf3}
+button{cursor:pointer;font-weight:600}
+.row{display:grid;grid-template-columns:1fr 140px;gap:10px}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
+.total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px}
+</style>
 </head>
 <body>
 <header>
-  <h1>🔥 POS — Librería de Fuego</h1>
-  <small class="muted">MVP local · IVA 19% · v1.1</small>
+  <h1>🧾 Caja (POS) — Librería de Fuego</h1>
+  <nav><a class="navbtn" href="/inventario/">Ir a Inventario</a> · <a class="navbtn" href="/">Inicio</a></nav>
 </header>
 
 <main>
-  <!-- INVENTARIO -->
   <section class="card">
-    <h2>Inventario</h2>
-
-    <div class="row">
-      <input id="invSearch" placeholder="Buscar por título, autor, editorial o código">
-      <button id="exportBtn">Exportar CSV</button>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>Código / ISBN</label>
-        <input id="p_code" placeholder="978... o interno">
-      </div>
-      <div>
-        <label>Stock</label>
-        <input id="p_stock" type="number" min="0" value="0">
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>Título</label>
-        <input id="p_title" placeholder="Título del libro">
-      </div>
-      <div>
-        <label>Editorial</label>
-        <input id="p_editorial" placeholder="Ej: Planeta">
-      </div>
-    </div>
-
-    <div style="margin-top:8px">
-      <label>Autores (agrega de a uno)</label>
-      <div class="inline">
-        <input id="author_input" placeholder="Nombre del autor/a">
-        <button id="addAuthorBtn" style="width:auto">+ Autor</button>
-      </div>
-      <div id="authors_chips" class="chiplist"></div>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>Distribuidor</label>
-        <input id="p_distribuidor" placeholder="Ej: Big Sur, Planeta, Zig-Zag">
-      </div>
-      <div>
-        <label>Margen % (basado en PVP)</label>
-        <input id="p_margin" type="number" min="0" max="100" value="40">
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>Precio Neto ($)</label>
-        <input id="p_priceNet" type="number" min="0" value="0">
-      </div>
-      <div>
-        <label>PVP con IVA (auto)</label>
-        <input id="p_priceGross" type="number" min="0" value="0" readonly>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:8px">
-      <div>
-        <label>Ganancia estimada ($)</label>
-        <input id="p_gain" type="number" value="0" readonly>
-      </div>
-      <div>
-        <label>Costo estimado ($)</label>
-        <input id="p_cost" type="number" value="0" readonly>
-      </div>
-    </div>
-
-    <div class="row" style="margin-top:10px">
-      <button id="addBtn">Agregar / Actualizar</button>
-      <button id="clearFormBtn">Limpiar</button>
-    </div>
-
-    <div style="max-height:250px;overflow:auto;margin-top:12px">
-      <table id="invTable">
-        <thead>
-          <tr>
-            <th>Código</th><th>Título</th><th>Autores</th><th>Editorial</th><th>Distribuidor</th>
-            <th>Stock</th><th>Neto</th><th>PVP</th><th>Margen%</th><th>Ganancia</th><th>Costo</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <small class="muted">Nota: “Editorial → Distribuidor” se recuerda y se autocompleta la próxima vez.</small>
-  </section>
-
-  <!-- CAJA / POS -->
-  <section class="card">
-    <h2>Caja / POS</h2>
+    <h2>Agregar al carrito</h2>
     <div class="row">
       <input id="scanInput" placeholder="Escanea o escribe código/ISBN">
       <button id="scanBtn">Agregar</button>
@@ -142,311 +37,108 @@
       <input id="searchTitle" placeholder="Buscar por título">
       <button id="pickBtn">Añadir</button>
     </div>
+  </section>
 
-    <div style="margin-top:12px">
-      <table id="cartTable">
-        <thead>
-          <tr>
-            <th>Código</th><th>Título</th><th>Cant.</th><th>Neto</th><th>IVA</th><th>Total</th><th></th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+  <section class="card" style="margin-top:12px">
+    <h2>Carrito</h2>
+    <table id="cartTable">
+      <thead><tr><th>Código</th><th>Título</th><th>Cant.</th><th>Neto</th><th>IVA</th><th>Total</th><th></th></tr></thead>
+      <tbody></tbody>
+    </table>
 
-    <div class="right" style="margin-top:10px">
-      <small id="itemsCount" class="muted">0 ítems</small>
-      <div class="total">Total: $<span id="grandTotal">0</span></div>
-    </div>
+    <div class="total"><span id="itemsCount">0 ítems</span> <span>Total: $<span id="grandTotal">0</span></span></div>
 
     <div class="row" style="margin-top:8px">
       <select id="payMethod">
-        <option value="efectivo">Efectivo</option>
-        <option value="debito">Débito</option>
-        <option value="credito">Crédito</option>
-        <option value="transferencia">Transferencia</option>
+        <option value="efectivo">Efectivo</option><option value="debito">Débito</option>
+        <option value="credito">Crédito</option><option value="transferencia">Transferencia</option>
       </select>
-      <button id="finishBtn" class="success">Cobrar / Imprimir</button>
+      <button id="finishBtn">Cobrar / Imprimir</button>
     </div>
-
-    <small class="muted">Datos guardados en este navegador (localStorage). Exporta CSV para respaldo.</small>
+    <small class="muted">El stock se descuenta y queda guardado. Si recargas la página, no vuelve a subir.</small>
   </section>
 </main>
 
 <script>
-  const IVA = 0.19;
-  const fmt = n => new Intl.NumberFormat('es-CL').format(Math.round(n||0));
-  const parseNum = v => Number.isFinite(Number(v)) ? Number(v) : 0;
+const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
+const db={getProducts:()=>JSON.parse(localStorage.getItem('products')||'[]'),
+          saveProducts:a=>localStorage.setItem('products',JSON.stringify(a)),
+          getSales:()=>JSON.parse(localStorage.getItem('sales')||'[]'),
+          saveSales:a=>localStorage.setItem('sales',JSON.stringify(a))};
 
-  // --- “BD” local ---
-  const db = {
-    getProducts(){ return JSON.parse(localStorage.getItem('products')||'[]'); },
-    saveProducts(arr){ localStorage.setItem('products', JSON.stringify(arr)); },
-    getSales(){ return JSON.parse(localStorage.getItem('sales')||'[]'); },
-    saveSales(arr){ localStorage.setItem('sales', JSON.stringify(arr)); },
-    getEdMap(){ return JSON.parse(localStorage.getItem('editorial_distrib_map')||'{}'); },
-    saveEdMap(obj){ localStorage.setItem('editorial_distrib_map', JSON.stringify(obj)); }
-  };
+const cart=new Map();
 
-  // --- Estado autores (chips) ---
-  let currentAuthors = [];
-  function renderAuthors(){
-    const box = document.getElementById('authors_chips');
-    box.innerHTML = '';
-    currentAuthors.forEach((a,i)=>{
-      const div = document.createElement('div');
-      div.className = 'chip';
-      div.innerHTML = `<span>${a}</span> <button data-i="${i}" title="Quitar">x</button>`;
-      box.appendChild(div);
-    });
-    box.querySelectorAll('button').forEach(btn=>{
-      btn.onclick = ()=>{ const i = Number(btn.dataset.i); currentAuthors.splice(i,1); renderAuthors(); };
-    });
+function addByCode(code){
+  const p=db.getProducts().find(r=>(r.code||'')===code);
+  if(!p){alert('Código no encontrado');return;}
+  if((p.stock||0)<=0){ if(!confirm('Stock en 0. ¿Agregar de todos modos?')) return; }
+  const it=cart.get(code)||{code:p.code,title:p.title,priceNet:p.priceNet||0,qty:0};
+  it.qty++; cart.set(code,it); renderCart();
+}
+function addByTitle(q){
+  const f=q.toLowerCase();
+  const p=db.getProducts().find(r=>(r.title||'').toLowerCase().includes(f));
+  if(p) addByCode(p.code); else alert('No encontrado');
+}
+
+function renderCart(){
+  const tb=document.querySelector('#cartTable tbody'); tb.innerHTML='';
+  let total=0,count=0;
+  for(const it of cart.values()){
+    const tax=it.priceNet*IVA*it.qty, gross=it.priceNet*(1+IVA)*it.qty;
+    total+=gross; count+=it.qty;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${it.code}</td><td>${it.title}</td><td>${it.qty}</td>
+                  <td>$${fmt(it.priceNet)}</td><td>$${fmt(tax)}</td><td>$${fmt(gross)}</td>
+                  <td><button data-code="${it.code}" class="rm">Quitar</button></td>`;
+    tb.appendChild(tr);
   }
-  document.getElementById('addAuthorBtn').onclick = ()=>{
-    const val = document.getElementById('author_input').value.trim();
-    if(!val) return;
-    currentAuthors.push(val);
-    document.getElementById('author_input').value='';
-    renderAuthors();
-  };
+  document.getElementById('grandTotal').textContent=fmt(total);
+  document.getElementById('itemsCount').textContent=`${count} ítems`;
+  tb.querySelectorAll('.rm').forEach(b=> b.onclick=()=>{cart.delete(b.dataset.code);renderCart();});
+}
 
-  // --- Autocompletar distribuidor por editorial recordada ---
-  document.getElementById('p_editorial').addEventListener('blur', ()=>{
-    const ed = document.getElementById('p_editorial').value.trim();
-    if(!ed) return;
-    const map = db.getEdMap();
-    if(map[ed]) document.getElementById('p_distribuidor').value = map[ed];
-  });
+document.getElementById('scanBtn').onclick=()=>{
+  const c=document.getElementById('scanInput').value.trim(); if(!c) return;
+  addByCode(c); document.getElementById('scanInput').value='';
+};
+document.getElementById('pickBtn').onclick=()=>{
+  const t=document.getElementById('searchTitle').value.trim(); if(!t) return;
+  addByTitle(t); document.getElementById('searchTitle').value='';
+};
 
-  // --- Cálculos de PVP / Margen / Ganancia / Costo ---
-  function recalcPricing(){
-    const net = parseNum(document.getElementById('p_priceNet').value);
-    const pvp = net*(1+IVA);
-    document.getElementById('p_priceGross').value = Math.round(pvp);
-
-    const margin = Math.max(0, Math.min(100, parseNum(document.getElementById('p_margin').value)));
-    const gain = pvp * (margin/100);
-    const cost = pvp - gain;
-    document.getElementById('p_gain').value = Math.round(gain);
-    document.getElementById('p_cost').value = Math.round(cost);
+document.getElementById('finishBtn').onclick=()=>{
+  if(cart.size===0){alert('Carrito vacío');return;}
+  let totalNet=0,totalTax=0,total=0,items=[];
+  for(const it of cart.values()){
+    totalNet+=it.priceNet*it.qty; totalTax+=it.priceNet*IVA*it.qty; total+=it.priceNet*(1+IVA)*it.qty; items.push(it);
   }
-  ['p_priceNet','p_margin'].forEach(id=>{
-    document.getElementById(id).addEventListener('input', recalcPricing);
-  });
-  recalcPricing();
+  const sales=db.getSales(); const id=(sales.at(-1)?.id||0)+1;
+  const sale={id,date:new Date().toISOString(),items,totalNet,totalTax,total,method:document.getElementById('payMethod').value};
+  sales.push(sale); db.saveSales(sales);
 
-  // --- Inventario ---
-  function refreshInventory(filter=''){
-    const tbody = document.querySelector('#invTable tbody');
-    tbody.innerHTML = '';
-    let rows = db.getProducts();
-    if(filter){
-      const f = filter.toLowerCase();
-      rows = rows.filter(r =>
-        (r.title||'').toLowerCase().includes(f) ||
-        (r.code||'').toLowerCase().includes(f) ||
-        (r.editorial||'').toLowerCase().includes(f) ||
-        (Array.isArray(r.authors)? r.authors.join(' ').toLowerCase().includes(f) : (r.author||'').toLowerCase().includes(f))
-      );
-    }
-    rows.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
-    for(const p of rows){
-      const pvp = (p.priceNet||0)*(1+IVA);
-      const margin = Number(p.marginPct||0);
-      const gain = pvp*(margin/100);
-      const cost = pvp - gain;
-      const authorsTxt = Array.isArray(p.authors)? p.authors.join(' ; ') : (p.author||'');
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${p.code||''}</td>
-        <td>${p.title||''}</td>
-        <td>${authorsTxt}</td>
-        <td>${p.editorial||''}</td>
-        <td>${p.distribuidor||''}</td>
-        <td>${p.stock??0}</td>
-        <td>$${fmt(p.priceNet||0)}</td>
-        <td>$${fmt(pvp)}</td>
-        <td>${fmt(margin)}%</td>
-        <td>$${fmt(gain)}</td>
-        <td>$${fmt(cost)}</td>
-      `;
-      tbody.appendChild(tr);
-    }
+  // Descontar stock y PERSISTIR
+  const rows=db.getProducts();
+  for(const it of items){
+    const i=rows.findIndex(r=>(r.code||'')===it.code);
+    if(i>=0) rows[i].stock=Math.max(0,(Number(rows[i].stock)||0)-it.qty);
   }
+  db.saveProducts(rows);
 
-  function clearForm(){
-    ['p_code','p_title','p_editorial','p_distribuidor','p_stock','p_priceNet','p_priceGross','p_gain','p_cost'].forEach(id=> document.getElementById(id).value='');
-    document.getElementById('p_margin').value='40';
-    currentAuthors = [];
-    renderAuthors();
-    recalcPricing();
-  }
+  // Ticket
+  const lines=items.map(it=>`${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`).join('<br>');
+  const html=`<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title>
+  <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}hr{border:none;border-top:1px dashed #888;margin:6px 0}</style>
+  </head><body><h1>Librería de Fuego</h1>
+  <div>Ticket #${id} — ${new Date().toLocaleString('es-CL')}</div><hr>${lines}<hr>
+  <div>Neto: $${fmt(totalNet)}</div><div>IVA (19%): $${fmt(totalTax)}</div><div><b>Total: $${fmt(total)}</b></div>
+  <div>Pago: ${sale.method}</div><hr><small>Gracias por tu compra</small></body></html>`;
+  const w=window.open('','_blank','width=420,height=600'); w.document.write(html); w.document.close(); w.print();
 
-  document.getElementById('addBtn').onclick = ()=>{
-    const code = document.getElementById('p_code').value.trim();
-    const title = document.getElementById('p_title').value.trim();
-    if(!code || !title){ alert('Completa código y título'); return; }
+  cart.clear(); renderCart();
+};
 
-    const editorial = document.getElementById('p_editorial').value.trim();
-    const distribuidor = document.getElementById('p_distribuidor').value.trim();
-    const stock = parseNum(document.getElementById('p_stock').value);
-    const priceNet = parseNum(document.getElementById('p_priceNet').value);
-    const marginPct = Math.max(0, Math.min(100, parseNum(document.getElementById('p_margin').value)));
-
-    // guardar/actualizar producto
-    const rows = db.getProducts();
-    const i = rows.findIndex(r => (r.code||'') === code);
-    const prod = {
-      code, title,
-      authors: [...currentAuthors],   // array
-      editorial, distribuidor,        // strings
-      stock: Number.isFinite(stock)? stock : 0,
-      priceNet: Number.isFinite(priceNet)? priceNet : 0,
-      marginPct
-    };
-    if(i>=0) rows[i] = {...rows[i], ...prod};
-    else rows.push(prod);
-    db.saveProducts(rows);
-
-    // recordar Editorial → Distribuidor
-    if(editorial && distribuidor){
-      const map = db.getEdMap();
-      map[editorial] = distribuidor;
-      db.saveEdMap(map);
-    }
-
-    clearForm();
-    refreshInventory(document.getElementById('invSearch').value);
-  };
-  document.getElementById('clearFormBtn').onclick = clearForm;
-  document.getElementById('invSearch').oninput = e=> refreshInventory(e.target.value);
-
-  // Export CSV (incluye nuevos campos)
-  document.getElementById('exportBtn').onclick = ()=>{
-    const rows = db.getProducts();
-    const head = ['code','title','authors','editorial','distribuidor','stock','priceNet','pvp','marginPct','gain','cost'];
-    const lines = [head.join(',')];
-    for(const p of rows){
-      const pvp = (p.priceNet||0)*(1+IVA);
-      const gain = pvp * ((p.marginPct||0)/100);
-      const cost = pvp - gain;
-      lines.push([
-        JSON.stringify(p.code||''),
-        JSON.stringify(p.title||''),
-        JSON.stringify((Array.isArray(p.authors)? p.authors.join(' | ') : '')),
-        JSON.stringify(p.editorial||''),
-        JSON.stringify(p.distribuidor||''),
-        p.stock||0,
-        p.priceNet||0,
-        Math.round(pvp),
-        p.marginPct||0,
-        Math.round(gain),
-        Math.round(cost)
-      ].join(','));
-    }
-    const blob = new Blob([lines.join('\n')], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = 'inventario.csv'; a.click();
-  };
-
-  // --- POS / Carrito ---
-  const cart = new Map(); // code -> item
-
-  function addToCartByCode(code){
-    const p = db.getProducts().find(r => (r.code||'') === code);
-    if(!p){ alert('Código no encontrado'); return; }
-    if((p.stock||0) <= 0){ if(!confirm('Stock en 0. ¿Agregar de todos modos?')) return; }
-    const it = cart.get(code) || {code:p.code, title:p.title, priceNet:p.priceNet||0, qty:0};
-    it.qty += 1; cart.set(code, it); renderCart();
-  }
-  function addToCartByTitle(q){
-    const f = q.toLowerCase();
-    const p = db.getProducts().find(r => (r.title||'').toLowerCase().includes(f));
-    if(p) addToCartByCode(p.code); else alert('No encontrado por título');
-  }
-
-  function renderCart(){
-    const tbody = document.querySelector('#cartTable tbody');
-    tbody.innerHTML = '';
-    let total = 0, count=0;
-    for(const it of cart.values()){
-      const tax = it.priceNet*IVA*it.qty, gross = it.priceNet*(1+IVA)*it.qty;
-      total += gross; count += it.qty;
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${it.code}</td>
-        <td>${it.title}</td>
-        <td>${it.qty}</td>
-        <td>$${fmt(it.priceNet)}</td>
-        <td>$${fmt(tax)}</td>
-        <td>$${fmt(gross)}</td>
-        <td><button class="qtybtn" data-a="del" data-code="${it.code}">Quitar</button></td>
-      `;
-      tbody.appendChild(tr);
-    }
-    document.getElementById('grandTotal').textContent = fmt(total);
-    document.getElementById('itemsCount').textContent = `${count} ítems`;
-    tbody.querySelectorAll('.qtybtn').forEach(b=>{
-      b.onclick = ()=>{ cart.delete(b.dataset.code); renderCart(); };
-    });
-  }
-
-  document.getElementById('scanBtn').onclick = ()=>{
-    const code = document.getElementById('scanInput').value.trim();
-    if(code){ addToCartByCode(code); document.getElementById('scanInput').value=''; document.getElementById('scanInput').focus(); }
-  };
-  document.getElementById('pickBtn').onclick = ()=>{
-    const t = document.getElementById('searchTitle').value.trim();
-    if(t){ addToCartByTitle(t); document.getElementById('searchTitle').value=''; }
-  };
-
-  // Cerrar venta (con persistencia robusta de stock)
-  document.getElementById('finishBtn').onclick = ()=>{
-    if(cart.size===0){ alert('Carrito vacío'); return; }
-    let totalNet=0,totalTax=0,total=0,items=[];
-    for(const it of cart.values()){
-      const tax = it.priceNet*IVA*it.qty; const gross = it.priceNet*(1+IVA)*it.qty;
-      totalNet += it.priceNet*it.qty; totalTax += tax; total += gross; items.push(it);
-    }
-    // Guardar venta
-    const sales = db.getSales();
-    const id = (sales.at(-1)?.id||0)+1;
-    const sale = {id,date:new Date().toISOString(),items,totalNet,totalTax,total,method:document.getElementById('payMethod').value};
-    sales.push(sale); db.saveSales(sales);
-
-    // Descontar stock (releer y regrabar para asegurar persistencia)
-    const rows = db.getProducts();
-    for(const it of items){
-      const i = rows.findIndex(r=> (r.code||'')===it.code);
-      if(i>=0){ rows[i].stock = Math.max(0, parseNum(rows[i].stock) - it.qty); }
-    }
-    db.saveProducts(rows); // <- persistido
-    refreshInventory(document.getElementById('invSearch').value);
-
-    // Ticket
-    const lines = items.map(it=> `${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`);
-    const html = `<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title>
-      <style>body{font-family:monospace;padding:8px} h1{font-size:16px;margin:0 0 6px 0} hr{border:none;border-top:1px dashed #888;margin:6px 0}</style>
-      </head><body>
-      <h1>Librería de Fuego</h1>
-      <div>Ticket #${id} — ${new Date().toLocaleString('es-CL')}</div>
-      <hr>${lines.join('<br>')}<hr>
-      <div>Neto: $${fmt(totalNet)}</div>
-      <div>IVA (19%): $${fmt(totalTax)}</div>
-      <div><b>Total: $${fmt(total)}</b></div>
-      <div>Pago: ${sale.method}</div>
-      <hr><small>Gracias por tu compra</small>
-      </body></html>`;
-    const w = window.open('','_blank','width=420,height=600');
-    w.document.write(html); w.document.close(); w.focus(); w.print();
-
-    cart.clear(); renderCart();
-  };
-
-  // init
-  refreshInventory();
-  renderAuthors();
+renderCart();
 </script>
 </body>
 </html>
