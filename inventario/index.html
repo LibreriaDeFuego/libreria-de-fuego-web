@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inventario — Librería de Fuego</title>
+<title>Inventario — Librería de Fuego (Cloud)</title>
 <style>
 :root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3;--brand:#ff6a00}
 body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
@@ -41,9 +41,10 @@ nav{display:flex;gap:10px}
 <main>
   <section class="card">
     <h2>Cargar / Editar producto</h2>
+
     <div class="row">
       <input id="invSearch" placeholder="Buscar por título, autor, editorial o código">
-      <button id="exportBtn">Exportar CSV</button>
+      <button id="reloadBtn">Recargar</button>
     </div>
 
     <div class="row" style="margin-top:8px">
@@ -104,20 +105,62 @@ nav{display:flex;gap:10px}
 </main>
 
 <script>
-const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0)), num=v=>Number(v)||0;
-const db={getProducts:()=>JSON.parse(localStorage.getItem('products')||'[]'),
-          saveProducts:a=>localStorage.setItem('products',JSON.stringify(a)),
-          getEdMap:()=>JSON.parse(localStorage.getItem('editorial_distrib_map')||'{}'),
-          saveEdMap:o=>localStorage.setItem('editorial_distrib_map',JSON.stringify(o))};
+/* ====== CONFIG ====== */
+const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec9"; // <-- pega aquí tu URL /exec
 
-let currentAuthors=[];
+/* ====== Helpers ====== */
+const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0)), num=v=>Number(v)||0;
+
+/* ====== API client ====== */
+async function apiGet(action){
+  const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, { method:'GET' });
+  return res.json();
+}
+async function apiPost(action, payload){
+  const res = await fetch(API_URL, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ action, ...payload })
+  });
+  return res.json();
+}
+
+/* ====== Cloud functions ====== */
+async function cloudGetProducts(){
+  const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
+  return r.data.map(p=>({
+    ...p,
+    authors: (p.authors||'').split('|').map(s=>s.trim()).filter(Boolean),
+    priceNet: Number(p.priceNet||0),
+    marginPct: Number(p.marginPct||0),
+    stock: Number(p.stock||0)
+  }));
+}
+async function cloudGetMap(){
+  const r = await apiGet('GET_MAP'); if(!r.ok) throw new Error('GET_MAP');
+  return r.data; // { editorial: distribuidor }
+}
+async function cloudUpsertProduct(prod){
+  const payload = {
+    product: { ...prod, authors: Array.isArray(prod.authors) ? prod.authors.join(' | ') : '' }
+  };
+  const r = await apiPost('UPSERT_PRODUCT', payload);
+  if(!r.ok) throw new Error('UPSERT_PRODUCT');
+}
+async function cloudSaveMap(editorial, distribuidor){
+  const r = await apiPost('SAVE_MAP', { editorial, distribuidor });
+  if(!r.ok) throw new Error('SAVE_MAP');
+}
+
+/* ====== UI state ====== */
+let currentAuthors = [];
 function renderAuthors(){
   const box=document.getElementById('authors_chips'); box.innerHTML='';
   currentAuthors.forEach((a,i)=>{
     const d=document.createElement('div'); d.className='chip';
-    d.innerHTML=`<span>${a}</span><button data-i="${i}">x</button>`; box.appendChild(d);
+    d.innerHTML=`<span>${a}</span><button data-i="${i}">x</button>`;
+    box.appendChild(d);
   });
-  box.querySelectorAll('button').forEach(b=> b.onclick=()=>{currentAuthors.splice(Number(b.dataset.i),1);renderAuthors();});
+  box.querySelectorAll('button').forEach(b=> b.onclick=()=>{ currentAuthors.splice(Number(b.dataset.i),1); renderAuthors(); });
 }
 document.getElementById('addAuthorBtn').onclick=()=>{
   const v=document.getElementById('author_input').value.trim(); if(!v) return;
@@ -133,32 +176,42 @@ function recalc(){
   document.getElementById('p_cost').value=Math.round(cost);
 }
 ['p_priceNet','p_margin'].forEach(id=>document.getElementById(id).addEventListener('input',recalc));
-document.getElementById('p_editorial').addEventListener('blur',()=>{
+document.getElementById('p_editorial').addEventListener('blur', async ()=>{
   const ed=document.getElementById('p_editorial').value.trim(); if(!ed) return;
-  const map=db.getEdMap(); if(map[ed]) document.getElementById('p_distribuidor').value=map[ed];
+  try{
+    const map=await cloudGetMap();
+    if(map[ed]) document.getElementById('p_distribuidor').value = map[ed];
+  }catch{}
 });
 recalc(); renderAuthors();
 
-function refresh(filter=''){
-  const tb=document.querySelector('#invTable tbody'); tb.innerHTML='';
-  let rows=db.getProducts();
-  if(filter){
-    const f=filter.toLowerCase();
-    rows=rows.filter(r=>(r.title||'').toLowerCase().includes(f)||(r.code||'').toLowerCase().includes(f)||
-      (r.editorial||'').toLowerCase().includes(f)||(Array.isArray(r.authors)?r.authors.join(' ').toLowerCase().includes(f):false));
-  }
-  rows.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
-  for(const p of rows){
-    const pvp=(p.priceNet||0)*(1+IVA), m=Number(p.marginPct||0), gain=pvp*(m/100), cost=pvp-gain;
-    const authorsTxt=Array.isArray(p.authors)?p.authors.join(' ; '):'';
-    const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${p.code||''}</td><td>${p.title||''}</td><td>${authorsTxt}</td><td>${p.editorial||''}</td>
-                  <td>${p.distribuidor||''}</td><td>${p.stock??0}</td><td>$${fmt(p.priceNet||0)}</td>
-                  <td>$${fmt(pvp)}</td><td>${fmt(m)}%</td><td>$${fmt(gain)}</td><td>$${fmt(cost)}</td>`;
-    tb.appendChild(tr);
+/* ====== Inventario (render) ====== */
+async function refresh(filter=''){
+  const tb=document.querySelector('#invTable tbody'); tb.innerHTML='<tr><td colspan="11">Cargando...</td></tr>';
+  try{
+    let rows=await cloudGetProducts();
+    if(filter){
+      const f=filter.toLowerCase();
+      rows=rows.filter(r=>(r.title||'').toLowerCase().includes(f)||(r.code||'').toLowerCase().includes(f)||
+        (r.editorial||'').toLowerCase().includes(f)||(Array.isArray(r.authors)?r.authors.join(' ').toLowerCase().includes(f):false));
+    }
+    rows.sort((a,b)=>(a.title||'').localeCompare(b.title||''));
+    tb.innerHTML='';
+    for(const p of rows){
+      const pvp=(p.priceNet||0)*(1+IVA), m=Number(p.marginPct||0), gain=pvp*(m/100), cost=pvp-gain;
+      const authorsTxt=Array.isArray(p.authors)?p.authors.join(' ; '):'';
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${p.code||''}</td><td>${p.title||''}</td><td>${authorsTxt}</td><td>${p.editorial||''}</td>
+                    <td>${p.distribuidor||''}</td><td>${p.stock??0}</td><td>$${fmt(p.priceNet||0)}</td>
+                    <td>$${fmt(pvp)}</td><td>${fmt(m)}%</td><td>$${fmt(gain)}</td><td>$${fmt(cost)}</td>`;
+      tb.appendChild(tr);
+    }
+  }catch(err){
+    tb.innerHTML=`<tr><td colspan="11">Error cargando: ${err.message}</td></tr>`;
   }
 }
 document.getElementById('invSearch').oninput=e=>refresh(e.target.value);
+document.getElementById('reloadBtn').onclick=()=>refresh(document.getElementById('invSearch').value);
 
 function clearForm(){
   ['p_code','p_title','p_editorial','p_distribuidor','p_stock','p_priceNet','p_priceGross','p_gain','p_cost'].forEach(id=>document.getElementById(id).value='');
@@ -166,7 +219,7 @@ function clearForm(){
 }
 document.getElementById('clearFormBtn').onclick=clearForm;
 
-document.getElementById('addBtn').onclick=()=>{
+document.getElementById('addBtn').onclick=async ()=>{
   const code=document.getElementById('p_code').value.trim();
   const title=document.getElementById('p_title').value.trim();
   if(!code||!title){alert('Completa código y título');return;}
@@ -175,25 +228,15 @@ document.getElementById('addBtn').onclick=()=>{
   const stock=num(document.getElementById('p_stock').value);
   const priceNet=num(document.getElementById('p_priceNet').value);
   const marginPct=Math.max(0,Math.min(100,num(document.getElementById('p_margin').value)));
-  const rows=db.getProducts(); const i=rows.findIndex(r=>(r.code||'')===code);
-  const prod={code,title,authors:[...currentAuthors],editorial,distribuidor,stock,priceNet,marginPct};
-  if(i>=0) rows[i]={...rows[i],...prod}; else rows.push(prod);
-  db.saveProducts(rows);
-  if(editorial&&distribuidor){ const map=db.getEdMap(); map[editorial]=distribuidor; db.saveEdMap(map); }
-  clearForm(); refresh(document.getElementById('invSearch').value);
-};
 
-document.getElementById('exportBtn').onclick=()=>{
-  const rows=db.getProducts(); const head=['code','title','authors','editorial','distribuidor','stock','priceNet','pvp','marginPct','gain','cost'];
-  const lines=[head.join(',')];
-  for(const p of rows){
-    const pvp=(p.priceNet||0)*(1+IVA), gain=pvp*((p.marginPct||0)/100), cost=pvp-gain;
-    lines.push([JSON.stringify(p.code||''),JSON.stringify(p.title||''),JSON.stringify((p.authors||[]).join(' | ')),
-      JSON.stringify(p.editorial||''),JSON.stringify(p.distribuidor||''),p.stock||0,p.priceNet||0,Math.round(pvp),
-      p.marginPct||0,Math.round(gain),Math.round(cost)].join(','));
+  try{
+    await cloudUpsertProduct({code,title,authors:[...currentAuthors],editorial,distribuidor,stock,priceNet,marginPct});
+    if(editorial && distribuidor) await cloudSaveMap(editorial, distribuidor);
+    clearForm(); await refresh(document.getElementById('invSearch').value);
+    alert('Producto guardado en la nube ✅');
+  }catch(err){
+    alert('Error guardando: ' + err.message);
   }
-  const blob=new Blob([lines.join('\n')],{type:'text/csv'}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='inventario.csv'; a.click();
 };
 
 refresh();
