@@ -1,64 +1,241 @@
 <!doctype html>
-});
-}
-document.querySelector('#scanBtn').onclick = ()=>{
-const code = document.querySelector('#scanInput').value.trim();
-if(code){ addToCartByCode(code); document.querySelector('#scanInput').value=''; document.querySelector('#scanInput').focus(); }
-};
-document.querySelector('#pickBtn').onclick = ()=>{
-const t = document.querySelector('#searchTitle').value.trim();
-if(t){ addToCartByTitle(t); document.querySelector('#searchTitle').value=''; }
-};
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POS — Librería de Fuego</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0b0c10;
+      color: #e7ecf3;
+    }
+    header {
+      background: #111318;
+      padding: 10px;
+      text-align: center;
+      font-weight: bold;
+    }
+    main {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding: 16px;
+    }
+    section {
+      flex: 1;
+      min-width: 300px;
+      background: #1a1c22;
+      padding: 12px;
+      border-radius: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid #333;
+      padding: 6px;
+      font-size: 12px;
+    }
+    button {
+      padding: 6px 10px;
+      margin-top: 6px;
+      cursor: pointer;
+      background: #ff6a00;
+      color: white;
+      border: none;
+      border-radius: 4px;
+    }
+    input, select {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
+    .total {
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    🔥 POS — Librería de Fuego
+  </header>
 
+  <main>
+    <!-- Inventario -->
+    <section>
+      <h2>Inventario</h2>
+      <input id="invSearch" placeholder="Buscar por título o código">
+      <br>
+      <input id="p_code" placeholder="Código / ISBN">
+      <input id="p_title" placeholder="Título">
+      <input id="p_author" placeholder="Autor / Editorial">
+      <input id="p_stock" type="number" placeholder="Stock">
+      <input id="p_price" type="number" placeholder="Precio Neto">
+      <button id="addBtn">Agregar / Actualizar</button>
 
-// Finish sale
-document.querySelector('#finishBtn').onclick = ()=>{
-if(cart.size===0){ alert('Carrito vacío'); return; }
-let totalNet=0,totalTax=0,total=0; const items=[];
-for(const it of cart.values()){
-const tax = it.priceNet*IVA*it.qty; const gross = it.priceNet*(1+IVA)*it.qty;
-totalNet += it.priceNet*it.qty; totalTax += tax; total += gross; items.push(it);
-}
-// guardar venta
-const sales = db.sales();
-const sale = {id: (sales.at(-1)?.id||0)+1, date:new Date().toISOString(), items, totalNet, totalTax, total, method: document.querySelector('#payMethod').value};
-sales.push(sale); db.saveSales(sales);
-// descontar stock
-const rows = db.products();
-for(const it of items){ const i = rows.findIndex(r=>r.code===it.code); if(i>=0){ rows[i].stock = Math.max(0,(rows[i].stock||0)-it.qty); } }
-db.saveProducts(rows);
-refreshInventory(document.querySelector('#invSearch').value);
-// imprimir ticket
-printTicket(sale);
-cart.clear(); renderCart();
-};
+      <table id="invTable">
+        <thead>
+          <tr>
+            <th>Código</th><th>Título</th><th>Stock</th><th>Neto</th><th>Bruto</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
 
+    <!-- Caja -->
+    <section>
+      <h2>Caja</h2>
+      <input id="scanInput" placeholder="Código / ISBN">
+      <button id="scanBtn">Agregar</button>
+      <input id="searchTitle" placeholder="Buscar por título">
+      <button id="pickBtn">Añadir</button>
 
-function printTicket(sale){
-const {id,date,items,totalNet,totalTax,total,method} = sale;
-const lines = items.map(it=> `${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`);
-const html = `<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title>
-<style>body{font-family:monospace;padding:8px} h1{font-size:16px;margin:0 0 6px 0} .muted{color:#555}
-hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head><body>
-<h1>Librería de Fuego</h1>
-<div class='muted'>Ticket #${id} — ${new Date(date).toLocaleString('es-CL')}</div>
-<hr/>
-${lines.map(l=>`<div>${l}</div>`).join('')}
-<hr/>
-<div>Neto: $${fmt(totalNet)}</div>
-<div>IVA (19%): $${fmt(totalTax)}</div>
-<div><b>Total: $${fmt(total)}</b></div>
-<div>Pago: ${method}</div>
-<hr/>
-<small>Gracias por tu compra</small>
-</body></html>`;
-const w = window.open('', '_blank', 'width=420,height=600');
-w.document.write(html); w.document.close(); w.focus(); w.print();
-}
+      <table id="cartTable">
+        <thead>
+          <tr>
+            <th>Código</th><th>Título</th><th>Cant.</th><th>Neto</th><th>IVA</th><th>Total</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
 
+      <div class="total">Total: $<span id="grandTotal">0</span></div>
+      <select id="payMethod">
+        <option value="efectivo">Efectivo</option>
+        <option value="debito">Débito</option>
+        <option value="credito">Crédito</option>
+        <option value="transferencia">Transferencia</option>
+      </select>
+      <button id="finishBtn">Cobrar / Imprimir</button>
+    </section>
+  </main>
 
-// init
-refreshInventory(''); renderCart();
+<script>
+  const IVA = 0.19;
+  const fmt = n => new Intl.NumberFormat('es-CL').format(Math.round(n||0));
+
+  // --- Base de datos en localStorage ---
+  function getProducts(){ return JSON.parse(localStorage.getItem('products')||'[]'); }
+  function saveProducts(arr){ localStorage.setItem('products', JSON.stringify(arr)); }
+  function getSales(){ return JSON.parse(localStorage.getItem('sales')||'[]'); }
+  function saveSales(arr){ localStorage.setItem('sales', JSON.stringify(arr)); }
+
+  // --- Inventario ---
+  function refreshInventory(filter=''){
+    const tbody = document.querySelector('#invTable tbody');
+    tbody.innerHTML = '';
+    let rows = getProducts();
+    if(filter){
+      const f = filter.toLowerCase();
+      rows = rows.filter(r=>r.title.toLowerCase().includes(f)||r.code.includes(f));
+    }
+    for(const p of rows){
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${p.code}</td><td>${p.title}</td><td>${p.stock}</td>
+                      <td>$${fmt(p.priceNet)}</td><td>$${fmt(p.priceNet*(1+IVA))}</td>`;
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.querySelector('#addBtn').onclick = ()=>{
+    const code = document.querySelector('#p_code').value.trim();
+    const title = document.querySelector('#p_title').value.trim();
+    if(!code || !title) return alert('Falta código o título');
+    const author = document.querySelector('#p_author').value.trim();
+    const stock = Number(document.querySelector('#p_stock').value||0);
+    const priceNet = Number(document.querySelector('#p_price').value||0);
+    let rows = getProducts();
+    const i = rows.findIndex(r=>r.code===code);
+    if(i>=0) rows[i] = {...rows[i], title, author, stock, priceNet};
+    else rows.push({code,title,author,stock,priceNet});
+    saveProducts(rows);
+    refreshInventory();
+  };
+  document.querySelector('#invSearch').oninput = e=>refreshInventory(e.target.value);
+
+  // --- POS / Carrito ---
+  const cart = new Map();
+  function renderCart(){
+    const tbody = document.querySelector('#cartTable tbody');
+    tbody.innerHTML='';
+    let total=0;
+    for(const it of cart.values()){
+      const tax=it.priceNet*IVA*it.qty, gross=it.priceNet*(1+IVA)*it.qty;
+      total+=gross;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${it.code}</td><td>${it.title}</td>
+      <td>${it.qty}</td><td>$${fmt(it.priceNet)}</td>
+      <td>$${fmt(tax)}</td><td>$${fmt(gross)}</td>
+      <td><button onclick=\"cart.delete('${it.code}');renderCart();\">Quitar</button></td>`;
+      tbody.appendChild(tr);
+    }
+    document.querySelector('#grandTotal').textContent=fmt(total);
+  }
+  document.querySelector('#scanBtn').onclick=()=>{
+    const code=document.querySelector('#scanInput').value.trim();
+    if(!code) return;
+    const p=getProducts().find(r=>r.code===code);
+    if(!p) return alert('No encontrado');
+    const it=cart.get(code)||{...p,qty:0};
+    it.qty++; cart.set(code,it); renderCart();
+    document.querySelector('#scanInput').value='';
+  };
+  document.querySelector('#pickBtn').onclick=()=>{
+    const t=document.querySelector('#searchTitle').value.trim().toLowerCase();
+    if(!t) return;
+    const p=getProducts().find(r=>r.title.toLowerCase().includes(t));
+    if(!p) return alert('No encontrado');
+    const it=cart.get(p.code)||{...p,qty:0};
+    it.qty++; cart.set(p.code,it); renderCart();
+    document.querySelector('#searchTitle').value='';
+  };
+
+  document.querySelector('#finishBtn').onclick=()=>{
+    if(cart.size===0) return alert('Carrito vacío');
+    let totalNet=0,totalTax=0,total=0,items=[];
+    for(const it of cart.values()){
+      totalNet+=it.priceNet*it.qty;
+      totalTax+=it.priceNet*IVA*it.qty;
+      total+=it.priceNet*(1+IVA)*it.qty;
+      items.push(it);
+    }
+    const sales=getSales();
+    const id=(sales.at(-1)?.id||0)+1;
+    const sale={id,date:new Date().toISOString(),items,totalNet,totalTax,total,method:document.querySelector('#payMethod').value};
+    sales.push(sale); saveSales(sales);
+    // Descontar stock
+    let rows=getProducts();
+    for(const it of items){
+      const i=rows.findIndex(r=>r.code===it.code);
+      if(i>=0) rows[i].stock=Math.max(0,rows[i].stock-it.qty);
+    }
+    saveProducts(rows); refreshInventory();
+    // Imprimir ticket
+    let lines=items.map(it=>`${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`);
+    let html=`<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title></head><body>
+    <h1>Librería de Fuego</h1>
+    <div>Ticket #${id} — ${new Date().toLocaleString('es-CL')}</div><hr>
+    ${lines.join('<br>')}
+    <hr><div>Neto: $${fmt(totalNet)}</div>
+    <div>IVA: $${fmt(totalTax)}</div>
+    <div><b>Total: $${fmt(total)}</b></div>
+    <div>Pago: ${sale.method}</div><hr>
+    <small>Gracias por tu compra</small>
+    </body></html>`;
+    const w=window.open('','_blank','width=400,height=600');
+    w.document.write(html); w.document.close(); w.print();
+    cart.clear(); renderCart();
+  };
+
+  // Init
+  refreshInventory();
 </script>
 </body>
 </html>
