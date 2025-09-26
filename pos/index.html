@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Caja (POS) — Librería de Fuego</title>
+<title>Caja (POS) — Librería de Fuego (Cloud)</title>
 <style>
 :root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3}
 body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
@@ -55,32 +55,31 @@ th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2
       </select>
       <button id="finishBtn">Cobrar / Imprimir</button>
     </div>
-    <small class="muted">El stock se descuenta y queda guardado. Si recargas la página, no vuelve a subir.</small>
+    <small class="muted">El stock se descuenta en la nube y queda igual en todos tus dispositivos.</small>
   </section>
 </main>
 
 <script>
+/* ====== CONFIG ====== */
+const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec"; // <-- pega aquí tu URL /exec
+
+/* ====== Helpers & API ====== */
 const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
-const db={getProducts:()=>JSON.parse(localStorage.getItem('products')||'[]'),
-          saveProducts:a=>localStorage.setItem('products',JSON.stringify(a)),
-          getSales:()=>JSON.parse(localStorage.getItem('sales')||'[]'),
-          saveSales:a=>localStorage.setItem('sales',JSON.stringify(a))};
+async function apiGet(action){ const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`); return r.json(); }
+async function apiPost(action,payload){ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}); return r.json(); }
 
+/* ====== Cloud ====== */
+async function cloudGetProducts(){
+  const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
+  return r.data.map(p=>({code:p.code,title:p.title,priceNet:Number(p.priceNet||0),stock:Number(p.stock||0)}));
+}
+async function cloudRegisterSale(sale){
+  const r = await apiPost('REGISTER_SALE', { sale }); if(!r.ok) throw new Error('REGISTER_SALE');
+  return r.data; // { saleId }
+}
+
+/* ====== POS ====== */
 const cart=new Map();
-
-function addByCode(code){
-  const p=db.getProducts().find(r=>(r.code||'')===code);
-  if(!p){alert('Código no encontrado');return;}
-  if((p.stock||0)<=0){ if(!confirm('Stock en 0. ¿Agregar de todos modos?')) return; }
-  const it=cart.get(code)||{code:p.code,title:p.title,priceNet:p.priceNet||0,qty:0};
-  it.qty++; cart.set(code,it); renderCart();
-}
-function addByTitle(q){
-  const f=q.toLowerCase();
-  const p=db.getProducts().find(r=>(r.title||'').toLowerCase().includes(f));
-  if(p) addByCode(p.code); else alert('No encontrado');
-}
-
 function renderCart(){
   const tb=document.querySelector('#cartTable tbody'); tb.innerHTML='';
   let total=0,count=0;
@@ -98,44 +97,54 @@ function renderCart(){
   tb.querySelectorAll('.rm').forEach(b=> b.onclick=()=>{cart.delete(b.dataset.code);renderCart();});
 }
 
-document.getElementById('scanBtn').onclick=()=>{
+document.getElementById('scanBtn').onclick=async ()=>{
   const c=document.getElementById('scanInput').value.trim(); if(!c) return;
-  addByCode(c); document.getElementById('scanInput').value='';
-};
-document.getElementById('pickBtn').onclick=()=>{
-  const t=document.getElementById('searchTitle').value.trim(); if(!t) return;
-  addByTitle(t); document.getElementById('searchTitle').value='';
+  const products=await cloudGetProducts();
+  const p=products.find(r=>r.code===c);
+  if(!p){ alert('Código no encontrado'); return; }
+  if((p.stock||0)<=0 && !confirm('Stock en 0. ¿Agregar de todos modos?')) return;
+  const it=cart.get(c)||{code:p.code,title:p.title,priceNet:p.priceNet,qty:0}; it.qty++; cart.set(c,it); renderCart();
+  document.getElementById('scanInput').value='';
 };
 
-document.getElementById('finishBtn').onclick=()=>{
-  if(cart.size===0){alert('Carrito vacío');return;}
+document.getElementById('pickBtn').onclick=async ()=>{
+  const t=document.getElementById('searchTitle').value.trim().toLowerCase(); if(!t) return;
+  const products=await cloudGetProducts();
+  const p=products.find(r=>(r.title||'').toLowerCase().includes(t));
+  if(!p){ alert('No encontrado'); return; }
+  if((p.stock||0)<=0 && !confirm('Stock en 0. ¿Agregar de todos modos?')) return;
+  const it=cart.get(p.code)||{code:p.code,title:p.title,priceNet:p.priceNet,qty:0}; it.qty++; cart.set(p.code,it); renderCart();
+  document.getElementById('searchTitle').value='';
+};
+
+document.getElementById('finishBtn').onclick=async ()=>{
+  if(cart.size===0){ alert('Carrito vacío'); return; }
   let totalNet=0,totalTax=0,total=0,items=[];
   for(const it of cart.values()){
-    totalNet+=it.priceNet*it.qty; totalTax+=it.priceNet*IVA*it.qty; total+=it.priceNet*(1+IVA)*it.qty; items.push(it);
+    totalNet+=it.priceNet*it.qty; totalTax+=it.priceNet*IVA*it.qty; total+=it.priceNet*(1+IVA)*it.qty;
+    items.push({code:it.code, qty:it.qty, priceNet:it.priceNet, title:it.title});
   }
-  const sales=db.getSales(); const id=(sales.at(-1)?.id||0)+1;
-  const sale={id,date:new Date().toISOString(),items,totalNet,totalTax,total,method:document.getElementById('payMethod').value};
-  sales.push(sale); db.saveSales(sales);
+  const method=document.getElementById('payMethod').value;
 
-  // Descontar stock y PERSISTIR
-  const rows=db.getProducts();
-  for(const it of items){
-    const i=rows.findIndex(r=>(r.code||'')===it.code);
-    if(i>=0) rows[i].stock=Math.max(0,(Number(rows[i].stock)||0)-it.qty);
+  try{
+    const resp = await cloudRegisterSale({ items, method, totalNet, totalTax, total });
+    const saleId = resp.saleId;
+
+    // Ticket
+    const lines=items.map(it=>`${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`).join('<br>');
+    const html=`<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title>
+      <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}hr{border:none;border-top:1px dashed #888;margin:6px 0}</style>
+      </head><body><h1>Librería de Fuego</h1>
+      <div>Ticket #${saleId} — ${new Date().toLocaleString('es-CL')}</div><hr>${lines}<hr>
+      <div>Neto: $${fmt(totalNet)}</div><div>IVA (19%): $${fmt(totalTax)}</div><div><b>Total: $${fmt(total)}</b></div>
+      <div>Pago: ${method}</div><hr><small>Gracias por tu compra</small></body></html>`;
+    const w=window.open('','_blank','width=420,height=600'); w.document.write(html); w.document.close(); w.print();
+
+    cart.clear(); renderCart();
+    alert('Venta registrada en la nube ✅');
+  }catch(err){
+    alert('Error registrando venta: ' + err.message);
   }
-  db.saveProducts(rows);
-
-  // Ticket
-  const lines=items.map(it=>`${it.qty} x ${it.title} ($${fmt(it.priceNet)} + IVA)`).join('<br>');
-  const html=`<!doctype html><html><head><meta charset='utf-8'><title>Ticket</title>
-  <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}hr{border:none;border-top:1px dashed #888;margin:6px 0}</style>
-  </head><body><h1>Librería de Fuego</h1>
-  <div>Ticket #${id} — ${new Date().toLocaleString('es-CL')}</div><hr>${lines}<hr>
-  <div>Neto: $${fmt(totalNet)}</div><div>IVA (19%): $${fmt(totalTax)}</div><div><b>Total: $${fmt(total)}</b></div>
-  <div>Pago: ${sale.method}</div><hr><small>Gracias por tu compra</small></body></html>`;
-  const w=window.open('','_blank','width=420,height=600'); w.document.write(html); w.document.close(); w.print();
-
-  cart.clear(); renderCart();
 };
 
 renderCart();
