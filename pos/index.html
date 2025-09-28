@@ -18,6 +18,8 @@ button{cursor:pointer;font-weight:600}
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
 th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
 .total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px}
+.qty{display:flex;gap:6px;align-items:center}
+.qty button{width:auto;padding:6px 10px}
 </style>
 </head>
 <body>
@@ -61,17 +63,21 @@ th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2
 
 <script>
 /* ====== CONFIG ====== */
-const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec"; // <-- pega aquí tu URL /exec
+const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
 
 /* ====== Helpers & API ====== */
 const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
 async function apiGet(action){ const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`); return r.json(); }
-async function apiPost(action,payload){ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}); return r.json(); }
+async function apiPost(action,payload){
+  // text/plain evita preflight CORS en Apps Script
+  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
+  return r.json();
+}
 
 /* ====== Cloud ====== */
 async function cloudGetProducts(){
   const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
-  return r.data.map(p=>({code:p.code,title:p.title,priceNet:Number(p.priceNet||0),stock:Number(p.stock||0)}));
+  return r.data.map(p=>({code:String(p.code),title:String(p.title),priceNet:Number(p.priceNet||0),stock:Number(p.stock||0)}));
 }
 async function cloudRegisterSale(sale){
   const r = await apiPost('REGISTER_SALE', { sale }); if(!r.ok) throw new Error('REGISTER_SALE');
@@ -79,7 +85,8 @@ async function cloudRegisterSale(sale){
 }
 
 /* ====== POS ====== */
-const cart=new Map();
+const cart=new Map(); // code -> {code,title,priceNet,qty}
+
 function renderCart(){
   const tb=document.querySelector('#cartTable tbody'); tb.innerHTML='';
   let total=0,count=0;
@@ -87,34 +94,55 @@ function renderCart(){
     const tax=it.priceNet*IVA*it.qty, gross=it.priceNet*(1+IVA)*it.qty;
     total+=gross; count+=it.qty;
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${it.code}</td><td>${it.title}</td><td>${it.qty}</td>
-                  <td>$${fmt(it.priceNet)}</td><td>$${fmt(tax)}</td><td>$${fmt(gross)}</td>
-                  <td><button data-code="${it.code}" class="rm">Quitar</button></td>`;
+    tr.innerHTML=`<td>${it.code}</td><td>${it.title}</td>
+      <td class="qty">
+        <button data-a="dec" data-code="${it.code}">−</button>
+        <span>${it.qty}</span>
+        <button data-a="inc" data-code="${it.code}">+</button>
+      </td>
+      <td>$${fmt(it.priceNet)}</td><td>$${fmt(tax)}</td><td>$${fmt(gross)}</td>
+      <td><button data-a="del" data-code="${it.code}">Quitar</button></td>`;
     tb.appendChild(tr);
   }
   document.getElementById('grandTotal').textContent=fmt(total);
   document.getElementById('itemsCount').textContent=`${count} ítems`;
-  tb.querySelectorAll('.rm').forEach(b=> b.onclick=()=>{cart.delete(b.dataset.code);renderCart();});
+
+  tb.querySelectorAll('button').forEach(b=>{
+    b.onclick=()=>{
+      const code=b.dataset.code, a=b.dataset.a, it=cart.get(code);
+      if(!it) return;
+      if(a==='inc') it.qty++;
+      if(a==='dec') it.qty=Math.max(1,it.qty-1);
+      if(a==='del') cart.delete(code);
+      renderCart();
+    };
+  });
+}
+
+async function addByCode(code){
+  const products=await cloudGetProducts();
+  const p=products.find(r=>r.code===code);
+  if(!p){ alert('Código no encontrado'); return; }
+  if((p.stock||0)<=0 && !confirm('Stock en 0. ¿Agregar de todos modos?')) return;
+  const it=cart.get(code)||{code:p.code,title:p.title,priceNet:p.priceNet,qty:0};
+  it.qty++; cart.set(code,it); renderCart();
+}
+
+async function addByTitle(q){
+  const products=await cloudGetProducts();
+  const f=q.toLowerCase();
+  const p=products.find(r=>(r.title||'').toLowerCase().includes(f));
+  if(!p){ alert('No encontrado'); return; }
+  await addByCode(p.code);
 }
 
 document.getElementById('scanBtn').onclick=async ()=>{
   const c=document.getElementById('scanInput').value.trim(); if(!c) return;
-  const products=await cloudGetProducts();
-  const p=products.find(r=>r.code===c);
-  if(!p){ alert('Código no encontrado'); return; }
-  if((p.stock||0)<=0 && !confirm('Stock en 0. ¿Agregar de todos modos?')) return;
-  const it=cart.get(c)||{code:p.code,title:p.title,priceNet:p.priceNet,qty:0}; it.qty++; cart.set(c,it); renderCart();
-  document.getElementById('scanInput').value='';
+  await addByCode(c); document.getElementById('scanInput').value='';
 };
-
 document.getElementById('pickBtn').onclick=async ()=>{
-  const t=document.getElementById('searchTitle').value.trim().toLowerCase(); if(!t) return;
-  const products=await cloudGetProducts();
-  const p=products.find(r=>(r.title||'').toLowerCase().includes(t));
-  if(!p){ alert('No encontrado'); return; }
-  if((p.stock||0)<=0 && !confirm('Stock en 0. ¿Agregar de todos modos?')) return;
-  const it=cart.get(p.code)||{code:p.code,title:p.title,priceNet:p.priceNet,qty:0}; it.qty++; cart.set(p.code,it); renderCart();
-  document.getElementById('searchTitle').value='';
+  const t=document.getElementById('searchTitle').value.trim(); if(!t) return;
+  await addByTitle(t); document.getElementById('searchTitle').value='';
 };
 
 document.getElementById('finishBtn').onclick=async ()=>{
