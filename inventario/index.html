@@ -20,7 +20,7 @@ button{cursor:pointer;font-weight:600}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .muted{color:var(--muted);font-size:12px}
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
+th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #23262f}
 th{color:#aab3c2}
 .chiplist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .chip{display:inline-flex;gap:6px;align-items:center;background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:4px 8px;font-size:12px}
@@ -106,7 +106,7 @@ nav{display:flex;gap:10px}
 
 <script>
 /* ====== CONFIG ====== */
-const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec9"; // <-- pega aquí tu URL /exec
+const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
 
 /* ====== Helpers ====== */
 const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0)), num=v=>Number(v)||0;
@@ -116,7 +116,15 @@ async function apiGet(action){
   const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, { method:'GET' });
   return res.json();
 }
-async function apiPost(action,payload){ const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...payload})}); return r.json(); }
+async function apiPost(action, payload){
+  // text/plain evita el preflight CORS en Apps Script
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body: JSON.stringify({ action, ...payload })
+  });
+  return res.json();
+}
 
 /* ====== Cloud functions ====== */
 async function cloudGetProducts(){
