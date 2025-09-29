@@ -17,10 +17,9 @@ input,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a
 input::placeholder{color:#677086}
 button{cursor:pointer;font-weight:600}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .muted{color:var(--muted);font-size:12px}
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #23262f}
+th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
 th{color:#aab3c2}
 .chiplist{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .chip{display:inline-flex;gap:6px;align-items:center;background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:4px 8px;font-size:12px}
@@ -34,6 +33,7 @@ nav{display:flex;gap:10px}
   <h1>📚 Inventario — Librería de Fuego</h1>
   <nav>
     <a class="navbtn" href="/pos/">Ir a Caja (POS)</a>
+    <a class="navbtn" href="/reportes/">Reportes</a>
     <a class="navbtn" href="/">Inicio</a>
   </nav>
 </header>
@@ -81,6 +81,12 @@ nav{display:flex;gap:10px}
       <div><label>Costo estimado ($)</label><input id="p_cost" type="number" value="0" readonly></div>
     </div>
 
+    <div style="margin-top:8px">
+      <label style="display:flex;align-items:center;gap:8px">
+        <input id="p_consigna" type="checkbox" style="width:auto"> Consignación
+      </label>
+    </div>
+
     <div class="row" style="margin-top:10px">
       <button id="addBtn">Agregar / Actualizar</button>
       <button id="clearFormBtn">Limpiar</button>
@@ -94,7 +100,7 @@ nav{display:flex;gap:10px}
         <thead>
           <tr>
             <th>Código</th><th>Título</th><th>Autores</th><th>Editorial</th><th>Distribuidor</th>
-            <th>Stock</th><th>Neto</th><th>PVP</th><th>Margen%</th><th>Ganancia</th><th>Costo</th>
+            <th>Consignación</th><th>Stock</th><th>Neto</th><th>PVP</th><th>Margen%</th><th>Ganancia</th><th>Costo</th>
           </tr>
         </thead>
         <tbody></tbody>
@@ -117,7 +123,6 @@ async function apiGet(action){
   return res.json();
 }
 async function apiPost(action, payload){
-  // text/plain evita el preflight CORS en Apps Script
   const res = await fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -134,12 +139,13 @@ async function cloudGetProducts(){
     authors: (p.authors||'').split('|').map(s=>s.trim()).filter(Boolean),
     priceNet: Number(p.priceNet||0),
     marginPct: Number(p.marginPct||0),
-    stock: Number(p.stock||0)
+    stock: Number(p.stock||0),
+    consignacion: String(p.consignacion||'')
   }));
 }
 async function cloudGetMap(){
   const r = await apiGet('GET_MAP'); if(!r.ok) throw new Error('GET_MAP');
-  return r.data; // { editorial: distribuidor }
+  return r.data;
 }
 async function cloudUpsertProduct(prod){
   const payload = {
@@ -189,7 +195,7 @@ recalc(); renderAuthors();
 
 /* ====== Inventario (render) ====== */
 async function refresh(filter=''){
-  const tb=document.querySelector('#invTable tbody'); tb.innerHTML='<tr><td colspan="11">Cargando...</td></tr>';
+  const tb=document.querySelector('#invTable tbody'); tb.innerHTML='<tr><td colspan="12">Cargando...</td></tr>';
   try{
     let rows=await cloudGetProducts();
     if(filter){
@@ -204,12 +210,12 @@ async function refresh(filter=''){
       const authorsTxt=Array.isArray(p.authors)?p.authors.join(' ; '):'';
       const tr=document.createElement('tr');
       tr.innerHTML=`<td>${p.code||''}</td><td>${p.title||''}</td><td>${authorsTxt}</td><td>${p.editorial||''}</td>
-                    <td>${p.distribuidor||''}</td><td>${p.stock??0}</td><td>$${fmt(p.priceNet||0)}</td>
+                    <td>${p.distribuidor||''}</td><td>${p.consignacion||''}</td><td>${p.stock??0}</td><td>$${fmt(p.priceNet||0)}</td>
                     <td>$${fmt(pvp)}</td><td>${fmt(m)}%</td><td>$${fmt(gain)}</td><td>$${fmt(cost)}</td>`;
       tb.appendChild(tr);
     }
   }catch(err){
-    tb.innerHTML=`<tr><td colspan="11">Error cargando: ${err.message}</td></tr>`;
+    tb.innerHTML=`<tr><td colspan="12">Error cargando: ${err.message}</td></tr>`;
   }
 }
 document.getElementById('invSearch').oninput=e=>refresh(e.target.value);
@@ -217,7 +223,9 @@ document.getElementById('reloadBtn').onclick=()=>refresh(document.getElementById
 
 function clearForm(){
   ['p_code','p_title','p_editorial','p_distribuidor','p_stock','p_priceNet','p_priceGross','p_gain','p_cost'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('p_margin').value='40'; currentAuthors=[]; renderAuthors(); recalc();
+  document.getElementById('p_margin').value='40';
+  document.getElementById('p_consigna').checked=false;
+  currentAuthors=[]; renderAuthors(); recalc();
 }
 document.getElementById('clearFormBtn').onclick=clearForm;
 
@@ -230,9 +238,10 @@ document.getElementById('addBtn').onclick=async ()=>{
   const stock=num(document.getElementById('p_stock').value);
   const priceNet=num(document.getElementById('p_priceNet').value);
   const marginPct=Math.max(0,Math.min(100,num(document.getElementById('p_margin').value)));
+  const consignacion=document.getElementById('p_consigna').checked?'sí':'';
 
   try{
-    await cloudUpsertProduct({code,title,authors:[...currentAuthors],editorial,distribuidor,stock,priceNet,marginPct});
+    await cloudUpsertProduct({code,title,authors:[...currentAuthors],editorial,distribuidor,stock,priceNet,marginPct,consignacion});
     if(editorial && distribuidor) await cloudSaveMap(editorial, distribuidor);
     clearForm(); await refresh(document.getElementById('invSearch').value);
     alert('Producto guardado en la nube ✅');
