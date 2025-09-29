@@ -2,29 +2,37 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Reportes — Librería de Fuego</title>
+<title>Reporte Detallado — Librería de Fuego</title>
 <style>
 :root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3}
 body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
 header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0e1116;border-bottom:1px solid #23262f}
 a{color:#fff;text-decoration:none}
-main{max-width:1100px;margin:0 auto;padding:16px}
+main{max-width:1200px;margin:0 auto;padding:16px}
 .card{background:#111318;border:1px solid #23262f;border-radius:14px;padding:14px}
 h1{font-size:18px;margin:0}
 label{font-size:12px;color:var(--muted)}
 input,select,button{padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1218;color:#e7ecf3}
 button{cursor:pointer;font-weight:600}
-.controls{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.controls{display:grid;grid-template-columns:repeat(8,1fr);gap:10px}
+.controls .span2{grid-column: span 2}
 table{width:100%;border-collapse:separate;border-spacing:0 8px;margin-top:12px}
-th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a}
+th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a;vertical-align:top}
+th{color:#aab3c2;position:sticky;top:0;background:#111318}
 .sum{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;color:#cbd5e1}
 .badge{background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:6px 10px}
+.small{font-size:11px;color:#a8b3c6}
 </style>
 </head>
 <body>
 <header>
-  <h1>📊 Reportes — Librería de Fuego</h1>
-  <nav><a href="/inventario/">Inventario</a> · <a href="/pos/">Caja</a> · <a href="/">Inicio</a></nav>
+  <h1>📄 Reporte Detallado — Librería de Fuego</h1>
+  <nav>
+    <a href="/reportes/">Resumen</a> ·
+    <a href="/inventario/">Inventario</a> ·
+    <a href="/pos/">Caja</a> ·
+    <a href="/">Inicio</a>
+  </nav>
 </header>
 
 <main>
@@ -32,27 +40,54 @@ th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2
     <div class="controls">
       <div><label>Desde</label><input type="date" id="from"></div>
       <div><label>Hasta</label><input type="date" id="to"></div>
-      <div>
-        <label>Grupo</label>
-        <select id="groupBy">
-          <option value="distribuidor">Distribuidor</option>
-          <option value="editorial">Editorial</option>
-          <option value="autor">Autor</option>
-          <option value="libro">Libro</option>
+
+      <div><label>Método</label>
+        <select id="method">
+          <option value="">Todos</option>
+          <option value="efectivo">Efectivo</option>
+          <option value="debito">Débito</option>
+          <option value="credito">Crédito</option>
+          <option value="transferencia">Transferencia</option>
         </select>
       </div>
-      <div style="display:flex;align-items:end;gap:8px">
-        <input type="checkbox" id="onlyCons" style="width:auto"><label for="onlyCons">Solo consignación</label>
+
+      <div><label>Solo consignación</label>
+        <div style="display:flex;align-items:center;height:38px"><input type="checkbox" id="onlyCons" style="width:auto"></div>
       </div>
-      <button id="runBtn">Ver reporte</button>
-      <button id="csvBtn">Exportar CSV</button>
+
+      <div class="span2"><label>Filtrar texto (cualquiera)</label><input id="q" placeholder="Título, autor, editorial, distribuidor, código..."></div>
+
+      <button id="runBtn">Ver</button>
+      <button id="csvBtn">CSV</button>
     </div>
 
     <div class="sum" id="summary"></div>
-    <table id="tbl">
-      <thead><tr id="thead"></tr></thead>
-      <tbody></tbody>
-    </table>
+
+    <div style="max-height:65vh;overflow:auto;margin-top:10px">
+      <table id="tbl">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>ID</th>
+            <th>Método</th>
+            <th>Código</th>
+            <th>Título</th>
+            <th>Autor(es)</th>
+            <th>Editorial</th>
+            <th>Distribuidor</th>
+            <th>Consig.</th>
+            <th>Cant.</th>
+            <th>Neto unit.</th>
+            <th>Neto línea</th>
+            <th>IVA</th>
+            <th>Total línea</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="small">Tip: escribe parte del nombre del autor, editorial, distribuidor o título en “Filtrar texto” para acotar el listado.</div>
   </section>
 </main>
 
@@ -67,15 +102,10 @@ async function apiGet(action, params={}){
   const r = await fetch(`${API_URL}?${qs}`);
   return r.json();
 }
-async function apiPost(action, payload){
-  const r = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
-  return r.json();
-}
 
 /* ===== Data loaders ===== */
 async function loadProducts(){
   const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
-  // indexar por code
   const byCode = {};
   for(const p of r.data){
     byCode[p.code] = {
@@ -90,53 +120,65 @@ async function loadProducts(){
 }
 async function loadSales(from, to){
   const r = await apiGet('LIST_SALES', { from, to }); if(!r.ok) throw new Error('LIST_SALES');
-  return r.data; // [{id,date,method,totalNet,totalTax,total,items:[{code,qty,priceNet,title}]}]
+  return r.data; // [{id,date,method,...,items:[{code,qty,priceNet,title}]}]
 }
 
-/* ===== Reporting ===== */
-function aggregate(sales, products, groupBy, onlyCons){
-  const agg = new Map(); // key -> {key, qty, net, tax, total}
-  const push = (key, qty, net, tax, total)=>{
-    const row = agg.get(key) || { key, qty:0, net:0, tax:0, total:0 };
-    row.qty += qty; row.net += net; row.tax += tax; row.total += total;
-    agg.set(key,row);
-  };
-
+/* ===== Build detailed rows ===== */
+function buildDetailRows(sales, products){
+  const rows = [];
   for(const s of sales){
     for(const it of (s.items||[])){
       const p = products[it.code] || {title: it.title||'', editorial:'', distribuidor:'', authors:[], consignacion:false};
-      if(onlyCons && !p.consignacion) continue;
-
-      // clave por grupo
-      let keys = [];
-      if(groupBy==='libro') keys = [`${it.code} — ${p.title}`];
-      if(groupBy==='editorial') keys = [p.editorial||'(sin editorial)'];
-      if(groupBy==='distribuidor') keys = [p.distribuidor||'(sin distribuidor)'];
-      if(groupBy==='autor') keys = (p.authors.length? p.authors : ['(sin autor)']);
-
       const lineNet = (it.priceNet||0) * (it.qty||0);
       const lineTax = lineNet * IVA;
       const lineTot = lineNet * (1+IVA);
-
-      for(const k of keys) push(k, it.qty||0, lineNet, lineTax, lineTot);
+      rows.push({
+        date: s.date, id: s.id, method: s.method,
+        code: it.code, title: p.title || it.title || '',
+        authors: p.authors.join(' ; '),
+        editorial: p.editorial || '',
+        distribuidor: p.distribuidor || '',
+        consignacion: p.consignacion ? 'sí' : '',
+        qty: it.qty||0,
+        priceNet: it.priceNet||0,
+        net: lineNet, tax: lineTax, total: lineTot
+      });
     }
   }
-  return Array.from(agg.values()).sort((a,b)=> b.total - a.total);
+  return rows;
 }
 
-function renderTable(rows, groupBy){
-  const thead = document.getElementById('thead');
-  thead.innerHTML = `<th>${groupBy.toUpperCase()}</th><th>Cant.</th><th>Neto</th><th>IVA</th><th>Total</th>`;
+/* ===== UI render ===== */
+function renderTable(rows){
   const tb = document.querySelector('#tbl tbody'); tb.innerHTML='';
   for(const r of rows){
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${r.key}</td><td>${r.qty}</td><td>$${fmt(r.net)}</td><td>$${fmt(r.tax)}</td><td>$${fmt(r.total)}</td>`;
+    tr.innerHTML = `
+      <td>${new Date(r.date).toLocaleString('es-CL')}</td>
+      <td>${r.id}</td>
+      <td>${r.method||''}</td>
+      <td>${r.code||''}</td>
+      <td>${r.title||''}</td>
+      <td>${r.authors||''}</td>
+      <td>${r.editorial||''}</td>
+      <td>${r.distribuidor||''}</td>
+      <td>${r.consignacion||''}</td>
+      <td>${r.qty}</td>
+      <td>$${fmt(r.priceNet)}</td>
+      <td>$${fmt(r.net)}</td>
+      <td>$${fmt(r.tax)}</td>
+      <td>$${fmt(r.total)}</td>
+    `;
     tb.appendChild(tr);
   }
 }
-
 function renderSummary(rows){
-  const sum = rows.reduce((a,r)=>({qty:a.qty+r.qty, net:a.net+r.net, tax:a.tax+r.tax, total:a.total+r.total}), {qty:0,net:0,tax:0,total:0});
+  const sum = rows.reduce((a,r)=>({
+    qty: a.qty + r.qty,
+    net: a.net + r.net,
+    tax: a.tax + r.tax,
+    total: a.total + r.total
+  }), {qty:0, net:0, tax:0, total:0});
   document.getElementById('summary').innerHTML = `
     <span class="badge">Ítems: ${fmt(sum.qty)}</span>
     <span class="badge">Neto: $${fmt(sum.net)}</span>
@@ -145,42 +187,87 @@ function renderSummary(rows){
   `;
 }
 
-function exportCSV(rows, groupBy, from, to){
-  const lines = [[groupBy, 'cantidad', 'neto', 'iva', 'total'].join(',')];
+/* ===== Filters ===== */
+function applyFilters(rows){
+  const q = (document.getElementById('q').value||'').toLowerCase().trim();
+  const onlyCons = document.getElementById('onlyCons').checked;
+  const method = document.getElementById('method').value;
+
+  return rows.filter(r=>{
+    if (onlyCons && r.consignacion !== 'sí') return false;
+    if (method && (r.method||'') !== method) return false;
+    if (q){
+      const hay = [
+        r.title, r.authors, r.editorial, r.distribuidor, r.code, r.method, r.id
+      ].join(' ').toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+
+/* ===== CSV ===== */
+function exportCSV(rows){
+  const headers = ['fecha','id','metodo','codigo','titulo','autores','editorial','distribuidor','consignacion','cantidad','neto_unit','neto_linea','iva','total_linea'];
+  const lines = [headers.join(',')];
   for(const r of rows){
-    lines.push([JSON.stringify(r.key), r.qty, Math.round(r.net), Math.round(r.tax), Math.round(r.total)].join(','));
+    const vals = [
+      new Date(r.date).toLocaleString('es-CL'),
+      r.id, r.method||'', r.code||'',
+      JSON.stringify(r.title||''), // entre comillas seguras
+      JSON.stringify(r.authors||''),
+      JSON.stringify(r.editorial||''),
+      JSON.stringify(r.distribuidor||''),
+      r.consignacion||'',
+      r.qty,
+      Math.round(r.priceNet),
+      Math.round(r.net),
+      Math.round(r.tax),
+      Math.round(r.total)
+    ];
+    lines.push(vals.join(','));
   }
   const blob = new Blob([lines.join('\n')], {type:'text/csv'});
-  const a=document.createElement('a');
+  const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `reporte_${groupBy}_${from||'inicio'}_${to||'hoy'}.csv`;
+  a.download = `reporte_detallado_${(document.getElementById('from').value||'inicio')}_${(document.getElementById('to').value||'hoy')}.csv`;
   a.click();
 }
 
-/* ===== UI actions ===== */
+/* ===== Run ===== */
 document.getElementById('runBtn').onclick = async ()=>{
   const from = document.getElementById('from').value;
   const to   = document.getElementById('to').value;
-  const groupBy = document.getElementById('groupBy').value;
-  const onlyCons = document.getElementById('onlyCons').checked;
 
-  document.querySelector('#tbl tbody').innerHTML = '<tr><td colspan="5">Cargando…</td></tr>';
+  document.querySelector('#tbl tbody').innerHTML = '<tr><td colspan="14">Cargando…</td></tr>';
 
   try{
     const [products, sales] = await Promise.all([loadProducts(), loadSales(from, to)]);
-    const rows = aggregate(sales, products, groupBy, onlyCons);
-    renderTable(rows, groupBy);
-    renderSummary(rows);
-    window.__lastRows = rows; window.__lastGroup = groupBy; window.__from = from; window.__to = to;
+    const all = buildDetailRows(sales, products);
+    const filtered = applyFilters(all);
+    renderTable(filtered);
+    renderSummary(filtered);
+
+    // guardar último resultado para exportar
+    window.__rows = filtered;
   }catch(e){
-    document.querySelector('#tbl tbody').innerHTML = `<tr><td colspan="5">Error: ${e.message}</td></tr>`;
+    document.querySelector('#tbl tbody').innerHTML = `<tr><td colspan="14">Error: ${e.message}</td></tr>`;
   }
 };
 
 document.getElementById('csvBtn').onclick = ()=>{
-  if(!window.__lastRows){ alert('Primero genera el reporte'); return; }
-  exportCSV(window.__lastRows, window.__lastGroup, window.__from, window.__to);
+  if(!window.__rows){ alert('Primero genera el reporte'); return; }
+  exportCSV(window.__rows);
 };
+
+// Valores por defecto de fecha: este mes
+(function setDefaultDates(){
+  const d = new Date(); const y=d.getFullYear(); const m=d.getMonth();
+  const first = new Date(y,m,1).toISOString().slice(0,10);
+  const last  = new Date(y,m+1,0).toISOString().slice(0,10);
+  document.getElementById('from').value = first;
+  document.getElementById('to').value   = last;
+})();
 </script>
 </body>
 </html>
