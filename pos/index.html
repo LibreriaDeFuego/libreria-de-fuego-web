@@ -5,127 +5,152 @@
 <title>Caja (POS) — Librería de Fuego (Cloud)</title>
 <style>
 :root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3}
-body{margin:0;background:#0b0c10;color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#0e1116;border-bottom:1px solid #23262f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
 a{color:#fff;text-decoration:none}
-main{max-width:980px;margin:0 auto;padding:16px}
+button{cursor:pointer;font-weight:600}
+
+.layout{display:grid;grid-template-columns:220px 1fr;gap:12px;max-width:1200px;margin:0 auto;padding:12px}
+@media (max-width:900px){ .layout{grid-template-columns:1fr} }
+
+aside{position:sticky;top:12px;height:fit-content}
+.navbox{background:#0e1116;border:1px solid #23262f;border-radius:14px;padding:12px}
+.navbox h1{font-size:18px;margin:0 0 8px}
+.nav a{display:block;background:#1a1f2b;border:1px solid #2b3344;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14px}
+.nav a:hover{background:#243045}
+
+main{display:grid;gap:12px}
+
 .card{background:#111318;border:1px solid #23262f;border-radius:14px;padding:14px}
-h1{font-size:18px;margin:0}
 h2{font-size:14px;margin:0 0 10px 0}
 input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid #2a2f3a;background:#0f1218;color:#e7ecf3}
-button{cursor:pointer;font-weight:600}
-.row{display:grid;grid-template-columns:1fr 140px;gap:10px}
+.badge{background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:6px 10px;color:#cbd5e1;font-size:12px}
+
+.inline{display:flex;align-items:center;gap:8px}
 .grid{display:grid;gap:10px}
+.grid-2{grid-template-columns:1fr 1fr}
 .grid-3{grid-template-columns:1fr 1fr 1fr}
 .grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
+
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
 th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid #2a2f3a;vertical-align:middle}
-.total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;margin-top:8px}
-.badge{background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:6px 10px;color:#cbd5e1;font-size:12px}
-.small{font-size:12px;color:#9aa3b2}
-.inline{display:flex;align-items:center;gap:8px}
 td input[type="number"]{padding:6px}
 td select{padding:6px}
-.actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;margin-top:8px}
+.small{font-size:12px;color:#9aa3b2}
 </style>
 </head>
 <body>
-<header>
-  <h1>🧾 Caja (POS) — Librería de Fuego</h1>
-  <nav class="inline">
-    <a class="badge" href="/inventario/">Inventario</a>
-    <a class="badge" href="/reportes/">Reportes</a>
-    <a class="badge" href="/">Inicio</a>
-  </nav>
-</header>
 
-<main>
-  <section class="card">
-    <h2>Agregar al carrito</h2>
-    <div class="grid grid-4">
-      <div class="inline" style="gap:10px">
-        <input id="scanInput" placeholder="Escanea o escribe código/ISBN">
-        <button id="scanBtn" style="width:auto">Agregar</button>
-      </div>
-      <div class="inline" style="gap:10px">
-        <input id="searchTitle" placeholder="Buscar por título">
-        <button id="pickBtn" style="width:auto">Añadir</button>
-      </div>
-      <label class="inline" title="Si activas Modo Cambio, las cantidades se agregan negativas (devuelve stock)">
-        <input id="returnMode" type="checkbox" style="width:auto"> Modo cambio / devolución
-      </label>
-      <div class="inline small">Tip: con el lector basta escanear, se agrega solo y el foco vuelve al campo.</div>
+<div class="layout">
+  <!-- Sidebar IZQUIERDO -->
+  <aside>
+    <div class="navbox">
+      <h1>🧾 Caja (POS)</h1>
+      <nav class="nav">
+        <a href="/">Inicio</a>
+        <a href="/inventario/">Inventario</a>
+        <a href="/reportes/">Reportes</a>
+      </nav>
     </div>
-  </section>
+  </aside>
 
-  <section class="card" style="margin-top:12px">
-    <h2>Carrito</h2>
-    <table id="cartTable">
-      <thead>
-        <tr>
-          <th>Código</th><th>Título</th><th>Cant.</th>
-          <th>Neto unit.</th>
-          <th>Desc. tipo</th><th>Desc. valor</th>
-          <th>Neto línea</th><th>IVA</th><th>Total</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
+  <!-- CONTENIDO -->
+  <main>
+    <section class="card">
+      <h2>Agregar al carrito</h2>
+      <div class="grid grid-4">
+        <div class="inline" style="gap:10px">
+          <input id="scanInput" placeholder="Escanea o escribe código/ISBN">
+          <button id="scanBtn" style="width:auto">Agregar</button>
+        </div>
+        <div class="inline" style="gap:10px">
+          <input id="searchTitle" placeholder="Buscar por título">
+          <button id="pickBtn" style="width:auto">Añadir</button>
+        </div>
+        <label class="inline" title="Si activas Modo Cambio, las cantidades se agregan negativas (devuelve stock)">
+          <input id="returnMode" type="checkbox" style="width:auto"> Modo cambio / devolución
+        </label>
+        <div class="inline small">Tip: con el lector basta escanear, se agrega solo y el foco vuelve al campo.</div>
+      </div>
+    </section>
 
-    <div class="grid grid-4" style="margin-top:8px">
-      <div class="inline">
-        <label class="small" style="width:110px">Desc. general</label>
-        <select id="globalDiscType" style="width:120px">
-          <option value="none">Ninguno</option>
-          <option value="percent">% (sobre neto)</option>
-          <option value="amount">$ (al neto)</option>
-        </select>
-        <input id="globalDiscValue" type="number" min="0" value="0" style="max-width:140px">
+    <section class="card">
+      <h2>Carrito</h2>
+      <table id="cartTable">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Título</th>
+            <th>Cantidad</th>
+            <th>PVP</th>
+            <th>Descuento</th>
+            <th>Total</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div class="grid grid-4" style="margin-top:8px">
+        <!-- DESCUENTO GENERAL (sobre PVP) -->
+        <div class="inline">
+          <label class="small" style="width:140px">Descuento general</label>
+          <select id="globalDiscType" style="width:140px">
+            <option value="none">Ninguno</option>
+            <option value="percent">Porcentaje (%)</option>
+            <option value="amount">Monto ($)</option>
+          </select>
+          <input id="globalDiscValue" type="number" min="0" value="0" style="max-width:140px">
+        </div>
+
+        <!-- MÉTODO DE PAGO -->
+        <div class="inline">
+          <label class="small" style="width:80px">Pago</label>
+          <select id="payMethod">
+            <option value="efectivo">Efectivo</option>
+            <option value="debito">Débito</option>
+            <option value="credito">Crédito</option>
+            <option value="transferencia">Transferencia</option>
+          </select>
+        </div>
+
+        <!-- PAGA CON / VUELTO -->
+        <div class="inline" id="cashBox" style="display:none">
+          <label class="small" style="width:100px">Paga con</label>
+          <input id="cashGiven" type="number" min="0" value="0" style="max-width:160px">
+          <span class="badge">Vuelto: $<span id="cashChange">0</span></span>
+        </div>
+
+        <div class="actions">
+          <button id="finishBtn">Cobrar / Ticket</button>
+          <button id="reprintBtn" title="Reimprimir último ticket">Reimprimir</button>
+          <button id="clearBtn">Vaciar</button>
+        </div>
       </div>
 
-      <div class="inline">
-        <label class="small" style="width:80px">Pago</label>
-        <select id="payMethod">
-          <option value="efectivo">Efectivo</option>
-          <option value="debito">Débito</option>
-          <option value="credito">Crédito</option>
-          <option value="transferencia">Transferencia</option>
-        </select>
+      <!-- RESUMEN SIMPLIFICADO -->
+      <div class="total">
+        <span id="itemsCount">0 ítems</span>
+        <span>
+          <span class="badge">Descuentos totales: $<span id="sumAllDiscounts">0</span></span>
+          <span class="badge">Total de compra: $<span id="grandTotal">0</span></span>
+        </span>
       </div>
-
-      <div class="inline" id="cashBox" style="display:none">
-        <label class="small" style="width:100px">Paga con</label>
-        <input id="cashGiven" type="number" min="0" value="0" style="max-width:160px">
-        <span class="badge">Vuelto: $<span id="cashChange">0</span></span>
-      </div>
-
-      <div class="actions" style="justify-content:flex-end">
-        <button id="finishBtn">Cobrar / Ticket</button>
-        <button id="reprintBtn" title="Reimprimir último ticket">Reimprimir</button>
-        <button id="clearBtn">Vaciar</button>
-      </div>
-    </div>
-
-    <div class="total">
-      <span id="itemsCount">0 ítems</span>
-      <span>
-        <span class="badge">Neto: $<span id="sumNet">0</span></span>
-        <span class="badge">IVA: $<span id="sumTax">0</span></span>
-        <span class="badge">Desc. gen.: $<span id="sumGlobalDisc">0</span></span>
-        <span class="badge">Total: $<span id="grandTotal">0</span></span>
-      </span>
-    </div>
-
-  </section>
-</main>
+    </section>
+  </main>
+</div>
 
 <script>
 /* ====== CONFIG ====== */
 const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
 
 /* ====== Helpers & API ====== */
-const IVA=0.19, fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
+const IVA=0.19; // solo para convertir priceNet -> PVP al leer, luego NO se usa
+const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
+
 async function apiGet(action){ const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`); return r.json(); }
 async function apiPost(action,payload){
   const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
@@ -135,7 +160,13 @@ async function apiPost(action,payload){
 /* ====== Cloud ====== */
 async function cloudGetProducts(){
   const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
-  return r.data.map(p=>({code:String(p.code),title:String(p.title),priceNet:Number(p.priceNet||0),stock:Number(p.stock||0)}));
+  // Convertimos priceNet a PVP directamente y olvidamos el neto
+  return r.data.map(p=>({
+    code:String(p.code),
+    title:String(p.title),
+    pricePVP:Number(p.priceNet||0) * (1+IVA),
+    stock:Number(p.stock||0)
+  }));
 }
 async function cloudRegisterSale(sale){
   const r = await apiPost('REGISTER_SALE', { sale }); if(!r.ok) throw new Error('REGISTER_SALE');
@@ -143,7 +174,7 @@ async function cloudRegisterSale(sale){
 }
 
 /* ====== POS state ====== */
-// cart: Map code -> {code,title,priceNet,qty,discType,discValue}
+// cart: Map code -> {code,title,pricePVP,qty,discType,discValue}
 const cart=new Map();
 let lastTicketHTML='';
 
@@ -152,7 +183,7 @@ function focusScan(){ const el=document.getElementById('scanInput'); el.focus();
 function addOrInc(code, product){
   const negative = document.getElementById('returnMode').checked;
   const delta = negative ? -1 : 1;
-  const it = cart.get(code) || {code:product.code,title:product.title,priceNet:product.priceNet,qty:0,discType:'none',discValue:0};
+  const it = cart.get(code) || {code:product.code,title:product.title,pricePVP:product.pricePVP,qty:0,discType:'none',discValue:0};
   it.qty += delta;
   if (it.qty === 0) cart.delete(code); else cart.set(code,it);
   renderCart();
@@ -176,40 +207,43 @@ async function addByTitle(q){
   addOrInc(p.code, p);
 }
 
-/* ====== Totals ====== */
+/* ====== Cálculos SOBRE PVP ====== */
 function computeLine(it){
-  const unit = Number(it.priceNet||0);
+  const unit = Number(it.pricePVP||0);
   const qty  = Number(it.qty||0);
   let unitAfter = unit;
+
   if(it.discType==='percent'){
     unitAfter = unit * (1 - (Number(it.discValue||0)/100));
   }else if(it.discType==='amount'){
     unitAfter = Math.max(0, unit - Number(it.discValue||0));
   }
-  const lineNet = unitAfter * qty;
-  const lineTax = lineNet * IVA;
-  const lineTot = lineNet + lineTax;
-  return {unitAfter,lineNet,lineTax,lineTot};
+
+  const base = unit * qty;
+  const descLine = (base - unitAfter * qty); // descuento de la línea
+  const total = unitAfter * qty;             // total de la línea (PVP ya con desc. de línea)
+  return {unitAfter, base, descLine, total};
 }
 
 function computeTotals(){
-  let net=0,tax=0,total=0;
+  let subtotal=0, descLineas=0;
   for(const it of cart.values()){
     const c = computeLine(it);
-    net += c.lineNet; tax += c.lineTax; total += c.lineTot;
+    subtotal += c.total;      // suma de líneas ya con desc. por línea
+    descLineas += c.descLine; // suma de descuentos de línea
   }
-  // Global discount (sobre neto ya con descuentos de línea)
+
   const type = document.getElementById('globalDiscType').value;
   const val  = Number(document.getElementById('globalDiscValue').value||0);
-  let globalDiscNet = 0;
-  if(type==='percent') globalDiscNet = net * (val/100);
-  else if(type==='amount') globalDiscNet = Math.min(net, val);
 
-  net = net - globalDiscNet;
-  tax = net * IVA;
-  total = net + tax;
+  let descGeneral = 0;
+  if(type==='percent') descGeneral = subtotal * (val/100);
+  else if(type==='amount') descGeneral = Math.min(subtotal, val);
 
-  return {net,tax,total,globalDiscNet};
+  const descuentosTotales = descLineas + descGeneral;
+  const totalCompra = Math.max(0, subtotal - descGeneral);
+
+  return { subtotal, descLineas, descGeneral, descuentosTotales, totalCompra };
 }
 
 /* ====== Render ====== */
@@ -225,22 +259,23 @@ function renderCart(){
         <span>${it.qty}</span>
         <button data-a="inc" data-code="${it.code}" style="width:auto;padding:6px 10px">+</button>
       </td>
-      <td>$${fmt(it.priceNet)}</td>
+      <td>$${fmt(it.pricePVP)}</td>
       <td>
-        <select data-a="discType" data-code="${it.code}">
-          <option value="none" ${it.discType==='none'?'selected':''}>Ninguno</option>
-          <option value="percent" ${it.discType==='percent'?'selected':''}>%</option>
-          <option value="amount" ${it.discType==='amount'?'selected':''}>$</option>
-        </select>
+        <div class="inline" style="gap:6px;justify-content:flex-end">
+          <select data-a="discType" data-code="${it.code}" style="width:90px">
+            <option value="none" ${it.discType==='none'?'selected':''}>Ninguno</option>
+            <option value="percent" ${it.discType==='percent'?'selected':''}>%</option>
+            <option value="amount" ${it.discType==='amount'?'selected':''}>$</option>
+          </select>
+          <input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" style="max-width:110px" />
+        </div>
       </td>
-      <td><input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" /></td>
-      <td>$${fmt(c.lineNet)}</td>
-      <td>$${fmt(c.lineTax)}</td>
-      <td>$${fmt(c.lineTot)}</td>
+      <td>$${fmt(c.total)}</td>
       <td><button data-a="del" data-code="${it.code}">Quitar</button></td>`;
     tb.appendChild(tr);
   }
-  // Wire buttons & inputs
+
+  // Wire botones/inputs
   tb.querySelectorAll('button').forEach(b=>{
     const code=b.dataset.code, a=b.dataset.a;
     b.onclick=()=>{
@@ -260,12 +295,10 @@ function renderCart(){
     };
   });
 
-  // Totales
+  // Totales simplificados
   const t=computeTotals();
-  document.getElementById('sumNet').textContent=fmt(t.net);
-  document.getElementById('sumTax').textContent=fmt(t.tax);
-  document.getElementById('grandTotal').textContent=fmt(t.total);
-  document.getElementById('sumGlobalDisc').textContent=fmt(t.globalDiscNet);
+  document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
+  document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
 
   // Items count
   const count = Array.from(cart.values()).reduce((a,it)=>a+Math.abs(it.qty),0);
@@ -275,29 +308,28 @@ function renderCart(){
   updateChange();
 }
 
-/* ====== Payment & change ====== */
+/* ====== Pago y vuelto ====== */
 function updateChange(){
   const method=document.getElementById('payMethod').value;
   const cashBox=document.getElementById('cashBox');
   cashBox.style.display = (method==='efectivo') ? 'flex' : 'none';
   if(method!=='efectivo'){ document.getElementById('cashGiven').value=0; document.getElementById('cashChange').textContent='0'; return; }
-  const total = computeTotals().total;
+  const total = computeTotals().totalCompra;
   const given = Number(document.getElementById('cashGiven').value||0);
   const change = Math.max(0, given - total);
   document.getElementById('cashChange').textContent = fmt(change);
 }
 
-/* ====== Ticket ====== */
+/* ====== Ticket (solo PVP) ====== */
 function buildTicketHTML(saleId, items, sums, method, isReturn){
   const lines = items.map(it=>{
+    const unitAfter = computeLine(it).unitAfter;
     const d = it.discType==='percent' ? ` (-${it.discValue}% )` :
               it.discType==='amount'  ? ` (-$${fmt(it.discValue)} c/u)` : '';
-    const unitAfter = computeLine(it).unitAfter;
     return `${it.qty} x ${it.title} — $${fmt(unitAfter)}${d}`;
   }).join('<br>');
 
-  const sub = `Neto: $${fmt(sums.net)} — IVA (19%): $${fmt(sums.tax)}`;
-  const discGen = sums.globalDiscNet>0 ? `<div>Descuento general: $${fmt(sums.globalDiscNet)}</div>` : '';
+  const discGen = sums.descGeneral>0 ? `<div>Descuento general: $${fmt(sums.descGeneral)}</div>` : '';
   const title = isReturn ? 'Ticket de Cambio' : 'Ticket de Venta';
 
   return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title>
@@ -307,20 +339,21 @@ function buildTicketHTML(saleId, items, sums, method, isReturn){
       <h1>Librería de Fuego</h1>
       <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
       <hr>${lines}<hr>
-      <div>${sub}</div>${discGen}
-      <div><b>Total: $${fmt(sums.total)}</b></div>
+      <div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div>
+      ${discGen}
+      <div><b>Total de compra: $${fmt(sums.totalCompra)}</b></div>
       <div>Pago: ${method}</div>
       <hr><small>Gracias por tu compra</small>
     </body></html>`;
 }
 
-/* ====== Events ====== */
+/* ====== Eventos ====== */
 // Agregar por código: botón
 document.getElementById('scanBtn').onclick=async ()=>{
   const c=document.getElementById('scanInput').value.trim(); if(!c) return;
   await addByCode(c); document.getElementById('scanInput').value=''; focusScan();
 };
-// Agregar por código: ENTER del teclado/lector → agrega automático
+// ENTER del teclado/lector → agrega automático
 document.getElementById('scanInput').addEventListener('keydown', async (e)=>{
   if(e.key==='Enter'){
     e.preventDefault();
@@ -328,11 +361,11 @@ document.getElementById('scanInput').addEventListener('keydown', async (e)=>{
     await addByCode(c); e.target.value=''; focusScan();
   }
 });
-// Algunos lectores pegan un salto de línea: detecta y agrega
+// Detecta salto de línea de algunos lectores
 document.getElementById('scanInput').addEventListener('input', async (e)=>{
   const v=e.target.value;
-  if(v.includes('\n')){
-    const c=v.replace(/\s+/g,'').trim();
+  if(v.includes('\\n')){
+    const c=v.replace(/\\s+/g,'').trim();
     if(c){ await addByCode(c); }
     e.target.value=''; focusScan();
   }
@@ -354,19 +387,19 @@ document.getElementById('finishBtn').onclick=async ()=>{
   const method=document.getElementById('payMethod').value;
   const sums = computeTotals();
 
-  // Construir items para la venta (priceNet original, descuentos explícitos)
   const items=[];
   for(const it of cart.values()){
     items.push({
       code: it.code, title: it.title, qty: it.qty,
-      priceNet: it.priceNet,
+      // guardamos PVP como priceGross para claridad en backend (opcional)
+      priceGross: it.pricePVP,
       discType: it.discType, discValue: Number(it.discValue||0)
     });
   }
 
-  // Guardar en la nube
   try{
-    const resp = await cloudRegisterSale({ items, method, totalNet: sums.net, totalTax: sums.tax, total: sums.total });
+    // Puedes adaptar el payload si tu backend espera neto; aquí enviamos totales en PVP:
+    const resp = await cloudRegisterSale({ items, method, total: sums.totalCompra, discounts: sums.descuentosTotales });
     const saleId = resp.saleId;
     const isReturn = document.getElementById('returnMode').checked;
     const html = buildTicketHTML(saleId, items, sums, method, isReturn);
