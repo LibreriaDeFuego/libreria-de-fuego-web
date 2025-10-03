@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Caja (POS) — Librería de Fuego (Cloud)</title>
+<title>Caja (POS) — Librería de Fuego (Cloud) — Omnibox</title>
 <style>
 :root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3;--line:#2a2f3a}
 *{box-sizing:border-box}
@@ -39,9 +39,9 @@ td input[type="number"]{padding:6px}
 .total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;margin-top:8px}
 .small{font-size:12px;color:var(--muted)}
 
-/* --- Sugerencias del buscador --- */
-.searchWrap{position:relative; grid-column:1 / -1;}
-.searchWrap input{font-size:16px;padding:14px 12px}
+/* --- Omnibox --- */
+.omniWrap{position:relative}
+.omniWrap input{font-size:16px;padding:14px 12px}
 .suggestBox{
   position:absolute; top:54px; left:0; right:0;
   background:#0e1116; border:1px solid #23262f; border-radius:12px;
@@ -52,9 +52,10 @@ td input[type="number"]{padding:6px}
 }
 .suggestItem{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:8px; border-radius:10px; cursor:pointer;
+  padding:10px; border-radius:10px; cursor:pointer;
 }
 .suggestItem:hover, .suggestItem.active{background:#1a1f2b}
+.suggestItem.no-stock{ background:#2a1b1b; } /* fila completa pintada cuando no hay stock */
 .left{display:flex; align-items:center; gap:10px; min-width:0}
 .cover{
   width:42px; height:60px; border-radius:10px; object-fit:cover; flex:0 0 auto; background:#1f2430;
@@ -64,12 +65,11 @@ td input[type="number"]{padding:6px}
   background:#1f2430; color:#cbd5e1; font-weight:700;
 }
 .meta{display:flex; flex-direction:column; gap:2px; min-width:0}
-.meta .t{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.meta .t{font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .meta .a{font-size:12px; color:#9aa3b2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .meta .p{font-size:12px; color:#cbd5e1}
 .stock{font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid #2b3344; color:#cbd5e1}
 .stock.good{background:#1b2a1b;border-color:#264b26}
-.stock.low{background:#2a281b;border-color:#4b4426}
 .stock.none{background:#2a1b1b;border-color:#4b2626}
 
 /* --- Segmentador de descuento (botones) --- */
@@ -103,15 +103,9 @@ td input[type="number"]{padding:6px}
     <section class="card">
       <h2>Agregar al carrito</h2>
       <div class="grid grid-4">
-        <!-- ESCÁNER (código/ISBN) -->
-        <div class="inline" style="gap:10px">
-          <input id="scanInput" placeholder="Escanea o escribe código/ISBN">
-          <button id="scanBtn" style="width:auto">Agregar</button>
-        </div>
-
-        <!-- 🔎 Buscador unificado (debajo y grande) -->
-        <div class="searchWrap">
-          <input id="searchBar" placeholder="Buscar por título, autor o código" autocomplete="off">
+        <!-- 🔎 Omnibox (código + búsqueda) -->
+        <div class="omniWrap" style="grid-column:1 / -1">
+          <input id="omniInput" placeholder="Escanea o escribe título, autor o código" autocomplete="off">
           <div id="searchResults" class="suggestBox" hidden></div>
         </div>
 
@@ -119,7 +113,7 @@ td input[type="number"]{padding:6px}
           <input id="returnMode" type="checkbox" style="width:auto"> Modo cambio / devolución
         </label>
 
-        <div class="inline small">Doble clic fila: +1 • Alt+clic: −1 • Supr: quitar. Escanea y el foco vuelve solo.</div>
+        <div class="inline small">Doble clic fila: +1 • Alt+clic: −1 • Supr: quitar. Escanea o escribe, el campo se limpia y vuelve el foco solo.</div>
       </div>
     </section>
 
@@ -230,7 +224,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7A
 /* ====== Helpers & API ====== */
 const IVA=0.19; // solo para convertir priceNet -> PVP al leer, luego NO se usa
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
-async function apiGet(action){ const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`); return r.json(); }
+async function apiGet(action){ const r=await fetch(\`\${API_URL}?action=\${encodeURIComponent(action)}\`); return r.json(); }
 async function apiPost(action,payload){
   const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
   return r.json();
@@ -258,16 +252,25 @@ async function loadProductsCached(){
 }
 
 /* ====== Cloud ====== */
+function getAuthorField(p){
+  let a = p.author ?? p.autor ?? p.autores ?? p.Author ?? p.Autor ?? p.authors ?? p.writer ?? p.creador ?? p.creators ?? '';
+  if(Array.isArray(a)) a = a.map(x => (x?.name||x)).join(', ');
+  if(a && typeof a === 'object') a = a.name || a.fullname || a.display || '';
+  return String(a||'');
+}
+function getCoverField(p){
+  let c = p.cover ?? p.image ?? p.coverUrl ?? p.portada ?? p.portadaUrl ?? p.thumbnail ?? '';
+  return String(c||'');
+}
 async function cloudGetProducts(){
   const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
   return r.data.map(p=>({
     code  : String(p.code),
-    title : String(p.title),
-    // tratamos distintos posibles campos para autor/imagen
-    author: String(p.author || p.autor || p.autores || p.authorName || ''),
-    cover : String(p.cover || p.image || p.coverUrl || p.portada || ''),
+    title : String(p.title||p.Titulo||p.titulo||'Sin título'),
+    author: getAuthorField(p),
+    cover : getCoverField(p),
     pricePVP: Number(p.priceNet||0) * (1+IVA), // SOLO para UI/boleta
-    stock : Number(p.stock||0)
+    stock : Number(p.stock||p.Stock||0)
   }));
 }
 async function cloudRegisterSale(sale){
@@ -281,9 +284,7 @@ const cart=new Map();
 let lastTicketHTML='';
 let selectedCode=null;        // para Supr
 let lastScan = {code:'', at:0}; // anti-doble escaneo
-
-function focusScan(){ const el=document.getElementById('scanInput'); el?.focus(); el?.select?.(); }
-function focusSearch(){ const el=document.getElementById('searchBar'); el?.focus(); el?.select?.(); }
+function focusOmni(){ const el=document.getElementById('omniInput'); el?.focus(); el?.select?.(); }
 
 function addOrInc(code, product){
   const negative = document.getElementById('returnMode').checked;
@@ -295,16 +296,15 @@ function addOrInc(code, product){
 }
 
 async function addByCode(code){
-  // anti-doble escaneo
   const now = Date.now();
-  if(lastScan.code===code && (now - lastScan.at) < 500) { return; }
+  if(lastScan.code===code && (now - lastScan.at) < 500) { return; } // anti-doble
   lastScan = {code, at: now};
 
   const products=await loadProductsCached();
   const p=products.find(r=>r.code===code);
   if(!p){ alert('Código no encontrado'); return; }
   if((p.stock||0)<=0 && !document.getElementById('returnMode').checked){
-    if(!confirm('Stock en 0. ¿Agregar de todos modos?')) return;
+    if(!confirm('Sin stock. ¿Agregar igualmente?')) return;
   }
   addOrInc(code, p);
 }
@@ -361,33 +361,33 @@ function renderCart(){
     const tr=document.createElement('tr');
     tr.title = 'Doble clic: +1 • Alt+clic: −1 • Supr: quitar';
     tr.dataset.code = it.code;
-    tr.innerHTML=`
-      <td>${it.code}</td>
-      <td>${it.title}</td>
+    tr.innerHTML=\`
+      <td>\${it.code}</td>
+      <td>\${it.title}</td>
       <td class="inline" style="gap:6px">
-        <button data-a="dec" data-code="${it.code}" style="width:auto;padding:6px 10px">−</button>
-        <span>${it.qty}</span>
-        <button data-a="inc" data-code="${it.code}" style="width:auto;padding:6px 10px">+</button>
+        <button data-a="dec" data-code="\${it.code}" style="width:auto;padding:6px 10px">−</button>
+        <span>\${it.qty}</span>
+        <button data-a="inc" data-code="\${it.code}" style="width:auto;padding:6px 10px">+</button>
       </td>
       <td>
-        $${fmt(it.pricePVP)}
-        ${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }
+        $\${fmt(it.pricePVP)}
+        \${ (it.discType!=='none' && Number(it.discValue)>0) ? \`<span class="finalcu">Final c/u: $\${fmt(c.unitAfter)}</span>\` : '' }
       </td>
       <td>
         <div class="inline" style="gap:6px;justify-content:flex-end">
-          <div class="seg" data-line="${it.code}">
-            <button type="button" data-a="discType" data-v="percent" class="${it.discType==='percent'?'active':''}">%</button>
-            <button type="button" data-a="discType" data-v="amount"  class="${it.discType==='amount'?'active':''}">$</button>
-            <button type="button" data-a="discNone"  class="${it.discType==='none'?'active':''}">sin</button>
+          <div class="seg" data-line="\${it.code}">
+            <button type="button" data-a="discType" data-v="percent" class="\${it.discType==='percent'?'active':''}">%</button>
+            <button type="button" data-a="discType" data-v="amount"  class="\${it.discType==='amount'?'active':''}">$</button>
+            <button type="button" data-a="discNone"  class="\${it.discType==='none'?'active':''}">sin</button>
           </div>
-          <input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" style="max-width:110px" />
+          <input type="number" min="0" value="\${it.discValue||0}" data-a="discValue" data-code="\${it.code}" style="max-width:110px" />
         </div>
       </td>
-      <td class="lineTotal">$${fmt(c.total)}</td>
-      <td><button data-a="del" data-code="${it.code}">Quitar</button></td>`;
+      <td class="lineTotal">$\${fmt(c.total)}</td>
+      <td><button data-a="del" data-code="\${it.code}">Quitar</button></td>\`;
     tb.appendChild(tr);
 
-    // selección de fila para tecla Supr
+    // selección y atajos
     tr.onclick = (ev)=>{ 
       document.querySelectorAll('#cartTable tbody tr').forEach(r=>r.classList.remove('row-selected'));
       tr.classList.add('row-selected'); selectedCode = it.code;
@@ -408,7 +408,7 @@ function renderCart(){
     };
   });
 
-  // botones de tipo de descuento por línea (sin re-render)
+  // botones de tipo de descuento por línea (sin re-render global)
   tb.querySelectorAll('.seg[data-line]').forEach(seg=>{
     seg.addEventListener('click', (e)=>{
       if(e.target.tagName!=='BUTTON') return;
@@ -424,22 +424,21 @@ function renderCart(){
         it.discType = 'none';
         it.discValue = 0;
       }
-      // actualiza SOLO celdas afectadas
       const row = seg.closest('tr');
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       const priceTd = row.children[3];
-      priceTd.innerHTML = `$${fmt(it.pricePVP)}${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }`;
+      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? \`<span class="finalcu">Final c/u: $\${fmt(c.unitAfter)}</span>\` : '' );
       updateTotalsUI();
     });
   });
 
-  // input del valor de descuento por línea (sin re-render)
+  // input valor descuento por línea
   tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
       it.discValue = Math.max(0, Number(el.value||0));
-      if(it.discType==='none' && it.discValue>0){ // si escribe, asumimos %
+      if(it.discType==='none' && it.discValue>0){
         const seg = el.closest('tr').querySelector('.seg[data-line]');
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
         seg.querySelector('button[data-v="percent"]').classList.add('active');
@@ -449,8 +448,8 @@ function renderCart(){
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       const priceTd = row.children[3];
-      priceTd.innerHTML = `$${fmt(it.pricePVP)}${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }`;
-      updateTotalsUI(); // badges + vuelto
+      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? \`<span class="finalcu">Final c/u: $\${fmt(c.unitAfter)}</span>\` : '' );
+      updateTotalsUI();
     };
   });
 
@@ -459,7 +458,7 @@ function renderCart(){
   document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
   document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
   const count = Array.from(cart.values()).reduce((a,it)=>a+Math.abs(it.qty),0);
-  document.getElementById('itemsCount').textContent=`${count} ítems`;
+  document.getElementById('itemsCount').textContent=\`\${count} ítems\`;
 
   updateChangeDisplays();
 }
@@ -491,7 +490,6 @@ function updateChangeDisplays(){
   const g1 = Number(document.getElementById('cashGiven1').value||0);
   const g2 = Number(document.getElementById('cashGiven2').value||0);
 
-  // vuelto considerando ambos pagos
   const cashPaid = (method1==='efectivo'?g1:0) + (method2==='efectivo'?g2:0);
   const nonCashPaid = (method1!=='efectivo'?a1:0) + (method2!=='efectivo'?a2:0);
   const change = Math.max(0, cashPaid + nonCashPaid - total);
@@ -504,30 +502,62 @@ function updateChangeDisplays(){
 function buildTicketHTML(saleId, items, sums, payments, isReturn){
   const lines = items.map(it=>{
     const {unitAfter} = computeLine(it);
-    const d = it.discType==='percent' ? ` (-${it.discValue}% )` :
-              it.discType==='amount'  ? ` (-$${fmt(it.discValue)} c/u)` : '';
-    return `${it.qty} x ${it.title} — $${fmt(unitAfter)}${d}`;
+    const d = it.discType==='percent' ? \` (-\${it.discValue}% )\` :
+              it.discType==='amount'  ? \` (-$\${fmt(it.discValue)} c/u)\` : '';
+    return \`\${it.qty} x \${it.title} — $\${fmt(unitAfter)}\${d}\`;
   }).join('<br>');
 
   const title = isReturn ? 'Ticket de Cambio' : 'Ticket de Venta';
-  const payText = payments.map(p=> `${p.method}: $${fmt(p.amount)}${p.cashGiven?` (paga con $${fmt(p.cashGiven)})`:''}`).join(' · ');
+  const payText = payments.map(p=> \`\${p.method}: $\${fmt(p.amount)}\${p.cashGiven?\` (paga con $\${fmt(p.cashGiven)})\`:''}\`).join(' · ');
 
-  return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title>
+  return \`<!doctype html><html><head><meta charset='utf-8'><title>\${title}</title>
     <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}
     hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head>
     <body>
       <h1>Librería de Fuego</h1>
-      <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
-      <hr>${lines}<hr>
-      <div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div>
-      <div><b>Total de compra: $${fmt(sums.totalCompra)}</b></div>
-      <div>Pago: ${payText}</div>
+      <div>\${title} #\${saleId} — \${new Date().toLocaleString('es-CL')}</div>
+      <hr>\${lines}<hr>
+      <div>Descuentos totales: $\${fmt(sums.descuentosTotales)}</div>
+      <div><b>Total de compra: $\${fmt(sums.totalCompra)}</b></div>
+      <div>Pago: \${payText}</div>
       <hr><small>Gracias por tu compra</small>
-    </body></html>`;
+    </body></html>\`;
 }
 
-/* ====== Buscador: normalización + fuzzy + UI ====== */
-const norm = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+/* ====== Omnibox: detección de código + búsqueda ====== */
+const omni = document.getElementById('omniInput');
+const results = document.getElementById('searchResults');
+let suggIndex = -1;
+function hideSuggestions(){ results.hidden = true; suggIndex=-1; }
+function showSuggestions(){ results.hidden = false; }
+
+const norm = s => (s||'').toString().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+
+// Checksums
+function ean13valid(d){
+  if(!/^\\d{13}$/.test(d)) return false;
+  const a = d.split('').map(Number);
+  const sum = a.slice(0,12).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
+  const check = (10 - (sum % 10)) % 10;
+  return check === a[12];
+}
+function ean8valid(d){
+  if(!/^\\d{8}$/.test(d)) return false;
+  const a = d.split('').map(Number);
+  const sum = a.slice(0,7).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
+  const check = (10 - (sum % 10)) % 10;
+  return check === a[7];
+}
+function isCodeLike(s){
+  const d = s.replace(/[^\\d]/g,'');
+  if(/^97[89]\\d{10}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
+  if(/^\\d{13}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
+  if(/^\\d{12}$/.test(d)) return {ok:true, code:d}; // UPC-A (sin checksum estricto)
+  if(/^\\d{8}$/.test(d) && ean8valid(d)) return {ok:true, code:d};
+  return {ok:false};
+}
+
+// Scoring búsqueda (título/autor)
 function lev(a,b){
   a=norm(a); b=norm(b);
   const m=a.length, n=b.length; if(m===0) return n; if(n===0) return m;
@@ -542,118 +572,105 @@ function lev(a,b){
   }
   return dp[n];
 }
-
 function scoreParts(p, q){
-  const T=norm(p.title), A=norm(p.author), C=norm(p.code), Q=norm(q);
-  let titleScore = 0, authorScore = 0, codeScore = 0;
+  const T=norm(p.title), A=norm(p.author), Q=norm(q);
+  let titleScore = 0, authorScore = 0;
   if(T.startsWith(Q)) titleScore += 100; else if(T.includes(Q)) titleScore += 70;
   if(A.startsWith(Q)) authorScore+= 100; else if(A.includes(Q)) authorScore+= 70;
   const dt = lev(T.slice(0,32), Q.slice(0,32)); if(dt<=2) titleScore += (50 - dt*10);
   const da = lev(A.slice(0,32), Q.slice(0,32)); if(da<=2) authorScore+= (50 - da*10);
-  if(C===Q) codeScore = 120;
-  const total = Math.max(titleScore, authorScore) + codeScore;
+  const total = Math.max(titleScore, authorScore);
   const matched = authorScore>titleScore ? 'author' : 'title';
   return {total, matched};
 }
-
-let suggIndex = -1;
-const searchBar     = document.getElementById('searchBar');
-const searchResults = document.getElementById('searchResults');
-
-function hideSuggestions(){ searchResults.hidden = true; suggIndex=-1; }
-function showSuggestions(){ searchResults.hidden = false; }
-
 function stockBadge(p){
   const s = Number(p.stock||0);
   if(s<=0) return '<span class="stock none">Sin stock</span>';
-  if(s<=2) return `<span class="stock low">Bajo (${s})</span>`;
-  return `<span class="stock good">En stock (${s})</span>`;
+  return \`<span class="stock good">Stock: \${s}</span>\`;
 }
-
 function renderSuggestions(list){
-  searchResults.innerHTML = '';
+  results.innerHTML = '';
   if(list.length===0){ hideSuggestions(); return; }
   list.forEach((p, i)=>{
     const row = document.createElement('div');
-    row.className = 'suggestItem' + (i===suggIndex ? ' active' : '');
+    row.className = 'suggestItem' + (i===suggIndex ? ' active' : '') + ( (p.stock||0)<=0 ? ' no-stock' : '' );
     const left = document.createElement('div'); left.className='left';
     let coverEl;
     if(p.cover){ coverEl = document.createElement('img'); coverEl.className='cover'; coverEl.src=p.cover; coverEl.alt=p.title; }
     else{ coverEl = document.createElement('div'); coverEl.className='no-cover'; coverEl.textContent=(p.title||'?').slice(0,1).toUpperCase(); }
     const meta = document.createElement('div'); meta.className='meta';
-    meta.innerHTML = `
-      <div class="t">${p.title||'Sin título'}</div>
-      <div class="a">${p.author||'Autor desconocido'}</div>
-      <div class="p">$${fmt(p.pricePVP)}</div>
-    `;
+    meta.innerHTML = \`
+      <div class="t">\${p.title||'Sin título'}</div>
+      <div class="a">\${p.author||'Autor desconocido'}</div>
+      <div class="p">$\${fmt(p.pricePVP)}</div>
+    \`;
     left.appendChild(coverEl); left.appendChild(meta);
     row.appendChild(left);
     const right = document.createElement('div'); right.innerHTML = stockBadge(p);
     row.appendChild(right);
 
-    row.onmousedown = (e)=>{ e.preventDefault(); addOrInc(p.code, p); hideSuggestions(); searchBar.value=''; focusSearch(); };
-    searchResults.appendChild(row);
+    row.onmousedown = (e)=>{ e.preventDefault(); addOrInc(p.code, p); hideSuggestions(); omni.value=''; focusOmni(); };
+    results.appendChild(row);
   });
   showSuggestions();
 }
 
-let searchTimer = null;
-searchBar?.addEventListener('input', async (e)=>{
-  const q = e.target.value.trim();
-  clearTimeout(searchTimer);
-  if(q.length<1){ hideSuggestions(); return; }
-  searchTimer = setTimeout(async ()=>{
-    const products = await loadProductsCached();
-    const scored = products
-      .map(p=>{ const sp = scoreParts(p, q); return {p, s: sp.total, matched: sp.matched}; })
-      .filter(x=>x.s>0)
-      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.p.title))
-      .slice(0, 14)
-      .map(x=>x.p);
-    renderSuggestions(scored);
-  }, 220);
-});
-searchBar?.addEventListener('keydown', (e)=>{
-  if(searchResults.hidden) return;
-  const rows = Array.from(searchResults.children);
-  if(e.key==='ArrowDown'){ e.preventDefault(); suggIndex = Math.min(rows.length-1, suggIndex+1); rows.forEach((r,i)=>r.classList.toggle('active', i===suggIndex)); }
-  else if(e.key==='ArrowUp'){ e.preventDefault(); suggIndex = Math.max(0, suggIndex-1); rows.forEach((r,i)=>r.classList.toggle('active', i===suggIndex)); }
-  else if(e.key==='Enter'){ e.preventDefault();
-    if(rows.length>0){
-      const pick = suggIndex>=0 ? rows[suggIndex] : rows[0];
-      pick.dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
-    }
-  }else if(e.key==='Escape'){ hideSuggestions(); }
-});
-document.addEventListener('click', (e)=>{
-  if(!searchResults.contains(e.target) && e.target!==searchBar){ hideSuggestions(); }
-});
+// Omnibox handlers
+let typingTimes = [];
+omni.addEventListener('keydown', (e)=>{
+  const now = performance.now();
+  typingTimes.push(now);
+  if(typingTimes.length>50) typingTimes.shift();
 
-/* ====== Eventos ====== */
-// Agregar por código: botón
-document.getElementById('scanBtn').onclick=async ()=>{
-  const c=document.getElementById('scanInput').value.trim(); if(!c) return;
-  await addByCode(c); document.getElementById('scanInput').value=''; focusScan();
-};
-// ENTER del teclado/lector → agrega automático
-document.getElementById('scanInput').addEventListener('keydown', async (e)=>{
   if(e.key==='Enter'){
     e.preventDefault();
-    const c=e.target.value.trim(); if(!c) return;
-    await addByCode(c); e.target.value=''; focusScan();
+    const raw = omni.value.trim();
+    const val = raw.replace(/\\s+/g,'');
+    const codeChk = isCodeLike(val);
+    if(codeChk.ok){
+      addByCode(codeChk.code).then(()=>{ omni.value=''; hideSuggestions(); focusOmni(); });
+      return;
+    }
+    // si no es código, usar primera sugerencia o buscar
+    const rows = Array.from(results.children);
+    if(!results.hidden && rows.length>0){
+      rows[0].dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
+    }else{
+      // dispara búsqueda manual
+      doSearch(val);
+    }
+  }else if(e.key==='Escape'){
+    hideSuggestions();
   }
 });
-// Detecta salto de línea de algunos lectores
-document.getElementById('scanInput').addEventListener('input', async (e)=>{
-  const v=e.target.value;
-  if(v.includes('\n')){
-    const c=v.replace(/\s+/g,'').trim();
-    if(c){ await addByCode(c); }
-    e.target.value=''; focusScan();
-  }
+omni.addEventListener('input', ()=>{
+  const q = omni.value.trim();
+  if(q.length<1){ hideSuggestions(); return; }
+  // si parece código (todo números y largo típico) no mostrar sugerencias aún
+  const d = q.replace(/[^\\d]/g,'');
+  if(d.length>=8 && d.length<=13){ return; }
+  doSearch(q);
+});
+let searchTimer=null;
+async function doSearch(q){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async ()=>{
+    const products = await loadProductsCached();
+    const sorted = products
+      .map(p=>{ const sp = scoreParts(p, q); return {p, s: sp.total, matched: sp.matched}; })
+      .filter(x=>x.s>0)
+      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.a?.p?.title||b.p.title))
+      .slice(0, 20)
+      .map(x=>x.p);
+    renderSuggestions(sorted);
+  }, 200);
+}
+document.addEventListener('click', (e)=>{
+  if(!results.contains(e.target) && e.target!==omni){ hideSuggestions(); }
 });
 
-// Descuento general: segmentador (sin re-render)
+/* ====== Eventos generales ====== */
+// Descuento general: segmentador (sin re-render global)
 const genSeg = document.getElementById('genSeg');
 genSeg?.addEventListener('click', (e)=>{
   if(e.target.tagName!=='BUTTON') return;
@@ -681,7 +698,7 @@ document.getElementById('splitToggle').addEventListener('change', ()=>{
 
 // Confirmación al vaciar
 document.getElementById('clearBtn').onclick=()=>{
-  if(confirm('¿Vaciar el carrito?')){ cart.clear(); renderCart(); focusScan(); }
+  if(confirm('¿Vaciar el carrito?')){ cart.clear(); renderCart(); focusOmni(); }
 };
 
 // Supr para quitar fila seleccionada
@@ -715,7 +732,7 @@ document.getElementById('retryOutboxBtn').onclick=processOutbox;
 
 /* ====== Cobro ====== */
 document.getElementById('finishBtn').onclick=async ()=>{
-  if(cart.size===0){ alert('Carrito vacío'); focusScan(); return; }
+  if(cart.size===0){ alert('Carrito vacío'); focusOmni(); return; }
   const sums = computeTotals();
   const split = document.getElementById('splitToggle').checked;
 
@@ -758,7 +775,7 @@ document.getElementById('finishBtn').onclick=async ()=>{
     lastTicketHTML = html;
     const w=window.open('','_blank','width=430,height=640'); w.document.write(html); w.document.close(); w.print();
 
-    cart.clear(); renderCart(); focusScan();
+    cart.clear(); renderCart(); focusOmni();
     alert(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada en la nube ✅');
   }catch(err){
     const q = getOutbox();
@@ -774,7 +791,7 @@ document.getElementById('reprintBtn').onclick=()=>{
 };
 
 // Inicial
-renderCart(); focusScan(); updateOutboxUI(); processOutbox();
+renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
 </script>
 </body>
 </html>
