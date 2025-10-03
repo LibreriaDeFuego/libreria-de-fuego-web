@@ -37,12 +37,13 @@ td input[type="number"]{padding:6px}
 .row-selected{background:#18202f}
 .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;margin-top:8px}
-.small{font-size:12px;color:#9aa3b2}
+.small{font-size:12px;color:var(--muted)}
 
 /* --- Sugerencias del buscador --- */
-.searchWrap{position:relative}
+.searchWrap{position:relative; grid-column:1 / -1;}
+.searchWrap input{font-size:16px;padding:14px 12px}
 .suggestBox{
-  position:absolute; top:44px; left:0; right:0;
+  position:absolute; top:54px; left:0; right:0;
   background:#0e1116; border:1px solid #23262f; border-radius:12px;
   padding:6px; max-height:360px; overflow:auto; z-index:9999;
 }
@@ -63,10 +64,13 @@ td input[type="number"]{padding:6px}
   background:#1f2430; color:#cbd5e1; font-weight:700;
 }
 .meta{display:flex; flex-direction:column; gap:2px; min-width:0}
-.meta .t{font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.meta .t{font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .meta .a{font-size:12px; color:#9aa3b2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .meta .p{font-size:12px; color:#cbd5e1}
 .stock{font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid #2b3344; color:#cbd5e1}
+.stock.good{background:#1b2a1b;border-color:#264b26}
+.stock.low{background:#2a281b;border-color:#4b4426}
+.stock.none{background:#2a1b1b;border-color:#4b2626}
 
 /* --- Segmentador de descuento (botones) --- */
 .seg{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden}
@@ -105,7 +109,7 @@ td input[type="number"]{padding:6px}
           <button id="scanBtn" style="width:auto">Agregar</button>
         </div>
 
-        <!-- 🔎 Buscador unificado (título / autor / código) -->
+        <!-- 🔎 Buscador unificado (debajo y grande) -->
         <div class="searchWrap">
           <input id="searchBar" placeholder="Buscar por título, autor o código" autocomplete="off">
           <div id="searchResults" class="suggestBox" hidden></div>
@@ -259,8 +263,9 @@ async function cloudGetProducts(){
   return r.data.map(p=>({
     code  : String(p.code),
     title : String(p.title),
-    author: String(p.author || ''),
-    cover : String(p.cover || p.image || p.coverUrl || ''),
+    // tratamos distintos posibles campos para autor/imagen
+    author: String(p.author || p.autor || p.autores || p.authorName || ''),
+    cover : String(p.cover || p.image || p.coverUrl || p.portada || ''),
     pricePVP: Number(p.priceNet||0) * (1+IVA), // SOLO para UI/boleta
     stock : Number(p.stock||0)
   }));
@@ -340,6 +345,14 @@ function computeTotals(){
   return { subtotal, descLineas, descGeneral, descuentosTotales, totalCompra };
 }
 
+/* === util: refrescar sólo badges y vuelto, sin redibujar tabla === */
+function updateTotalsUI(){
+  const t=computeTotals();
+  document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
+  document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
+  updateChangeDisplays();
+}
+
 /* ====== Render ====== */
 function renderCart(){
   const tb=document.querySelector('#cartTable tbody'); tb.innerHTML='';
@@ -370,7 +383,7 @@ function renderCart(){
           <input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" style="max-width:110px" />
         </div>
       </td>
-      <td>$${fmt(c.total)}</td>
+      <td class="lineTotal">$${fmt(c.total)}</td>
       <td><button data-a="del" data-code="${it.code}">Quitar</button></td>`;
     tb.appendChild(tr);
 
@@ -378,10 +391,8 @@ function renderCart(){
     tr.onclick = (ev)=>{ 
       document.querySelectorAll('#cartTable tbody tr').forEach(r=>r.classList.remove('row-selected'));
       tr.classList.add('row-selected'); selectedCode = it.code;
-      // Alt+clic: -1
       if(ev.altKey){ const item=cart.get(it.code); if(item){ item.qty--; if(item.qty===0) cart.delete(it.code); renderCart(); } }
     };
-    // doble clic: +1
     tr.ondblclick = ()=>{ const item=cart.get(it.code); if(item){ item.qty++; renderCart(); } };
   }
 
@@ -397,7 +408,7 @@ function renderCart(){
     };
   });
 
-  // botones de tipo de descuento por línea
+  // botones de tipo de descuento por línea (sin re-render)
   tb.querySelectorAll('.seg[data-line]').forEach(seg=>{
     seg.addEventListener('click', (e)=>{
       if(e.target.tagName!=='BUTTON') return;
@@ -413,17 +424,33 @@ function renderCart(){
         it.discType = 'none';
         it.discValue = 0;
       }
-      renderCart();
+      // actualiza SOLO celdas afectadas
+      const row = seg.closest('tr');
+      const c = computeLine(it);
+      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
+      const priceTd = row.children[3];
+      priceTd.innerHTML = `$${fmt(it.pricePVP)}${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }`;
+      updateTotalsUI();
     });
   });
 
-  // input del valor de descuento por línea
+  // input del valor de descuento por línea (sin re-render)
   tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
       it.discValue = Math.max(0, Number(el.value||0));
-      if(it.discType==='none' && it.discValue>0) it.discType='percent';
-      renderCart();
+      if(it.discType==='none' && it.discValue>0){ // si escribe, asumimos %
+        const seg = el.closest('tr').querySelector('.seg[data-line]');
+        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        seg.querySelector('button[data-v="percent"]').classList.add('active');
+        it.discType='percent';
+      }
+      const row = el.closest('tr');
+      const c = computeLine(it);
+      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
+      const priceTd = row.children[3];
+      priceTd.innerHTML = `$${fmt(it.pricePVP)}${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }`;
+      updateTotalsUI(); // badges + vuelto
     };
   });
 
@@ -448,7 +475,6 @@ function updateChangeDisplays(){
   cashBox1.style.display = (method1==='efectivo') ? 'flex' : 'none';
 
   if(!split){
-    // single pago
     const given1 = Number(document.getElementById('cashGiven1').value||0);
     const change1 = Math.max(0, (method1==='efectivo' ? given1 : 0) - total);
     document.getElementById('cashChange1').textContent = fmt(change1);
@@ -456,25 +482,19 @@ function updateChangeDisplays(){
     return;
   }
 
-  // split activado
   document.getElementById('splitSection').style.display='grid';
-
   const method2 = document.getElementById('payMethod2').value;
   cashBox2.style.display = (method2==='efectivo') ? 'flex' : 'none';
 
   const a1 = Math.max(0, Number(document.getElementById('amount1').value||0));
   const a2 = Math.max(0, Number(document.getElementById('amount2').value||0));
-
   const g1 = Number(document.getElementById('cashGiven1').value||0);
   const g2 = Number(document.getElementById('cashGiven2').value||0);
 
-  // vuelto considerando ambos
-  let paid = 0;
-  paid += (method1==='efectivo') ? Math.min(g1, a1 || total) : a1;
-  paid += (method2==='efectivo') ? Math.min(g2, a2 || (total - a1)) : a2;
-
+  // vuelto considerando ambos pagos
   const cashPaid = (method1==='efectivo'?g1:0) + (method2==='efectivo'?g2:0);
-  const change = Math.max(0, cashPaid + ( (method1!=='efectivo')?a1:0 ) + ( (method2!=='efectivo')?a2:0 ) - total);
+  const nonCashPaid = (method1!=='efectivo'?a1:0) + (method2!=='efectivo'?a2:0);
+  const change = Math.max(0, cashPaid + nonCashPaid - total);
 
   document.getElementById('cashChange1').textContent = fmt(method1==='efectivo' ? Math.max(0, g1 - (a1 || 0)) : 0);
   document.getElementById('cashChange2').textContent = fmt(method2==='efectivo' ? Math.max(0, g2 - (a2 || 0)) : 0);
@@ -536,7 +556,7 @@ function scoreParts(p, q){
   return {total, matched};
 }
 
-let suggIndex = -1; // navegación con teclado
+let suggIndex = -1;
 const searchBar     = document.getElementById('searchBar');
 const searchResults = document.getElementById('searchResults');
 
@@ -545,9 +565,9 @@ function showSuggestions(){ searchResults.hidden = false; }
 
 function stockBadge(p){
   const s = Number(p.stock||0);
-  if(s<=0) return '<span class="stock">Sin stock</span>';
-  if(s<=2) return '<span class="stock">Bajo</span>';
-  return '<span class="stock">En stock</span>';
+  if(s<=0) return '<span class="stock none">Sin stock</span>';
+  if(s<=2) return `<span class="stock low">Bajo (${s})</span>`;
+  return `<span class="stock good">En stock (${s})</span>`;
 }
 
 function renderSuggestions(list){
@@ -557,7 +577,6 @@ function renderSuggestions(list){
     const row = document.createElement('div');
     row.className = 'suggestItem' + (i===suggIndex ? ' active' : '');
     const left = document.createElement('div'); left.className='left';
-    // imagen o placeholder
     let coverEl;
     if(p.cover){ coverEl = document.createElement('img'); coverEl.className='cover'; coverEl.src=p.cover; coverEl.alt=p.title; }
     else{ coverEl = document.createElement('div'); coverEl.className='no-cover'; coverEl.textContent=(p.title||'?').slice(0,1).toUpperCase(); }
@@ -634,7 +653,7 @@ document.getElementById('scanInput').addEventListener('input', async (e)=>{
   }
 });
 
-// Descuento general: segmentador
+// Descuento general: segmentador (sin re-render)
 const genSeg = document.getElementById('genSeg');
 genSeg?.addEventListener('click', (e)=>{
   if(e.target.tagName!=='BUTTON') return;
@@ -642,16 +661,16 @@ genSeg?.addEventListener('click', (e)=>{
   e.target.classList.add('active');
   const v = e.target.dataset.v; // 'percent' | 'amount'
   document.getElementById('globalDiscType').value = v;
-  renderCart();
+  updateTotalsUI();
 });
+document.getElementById('globalDiscValue').addEventListener('input', updateTotalsUI);
 
 // Split toggle
 document.getElementById('splitToggle').addEventListener('change', ()=>{
-  // autofill montos: todo al 1 por defecto
   const total = computeTotals().totalCompra;
   document.getElementById('amount1').value = total;
   document.getElementById('amount2').value = 0;
-  renderCart();
+  updateChangeDisplays();
 });
 
 // Inputs que cambian cálculo de vuelto/montos
@@ -684,15 +703,14 @@ async function processOutbox(){
   for(const sale of q){
     try{
       await cloudRegisterSale(sale.payload);
-      // ok: no se vuelve a encolar
     }catch{
-      remaining.push(sale); // sigue pendiente
+      remaining.push(sale);
     }
   }
   setOutbox(remaining);
   updateOutboxUI();
 }
-setInterval(processOutbox, 30000); // reintenta cada 30s
+setInterval(processOutbox, 30000);
 document.getElementById('retryOutboxBtn').onclick=processOutbox;
 
 /* ====== Cobro ====== */
@@ -714,7 +732,7 @@ document.getElementById('finishBtn').onclick=async ()=>{
     const cash2 = Number(document.getElementById('cashGiven2').value||0);
 
     const sum = a1 + a2;
-    if(Math.abs(sum - sums.totalCompra) > 1){ // tolerancia $1
+    if(Math.abs(sum - sums.totalCompra) > 1){
       alert('La suma de montos (pago dividido) debe ser igual al Total de compra.');
       return;
     }
@@ -722,7 +740,6 @@ document.getElementById('finishBtn').onclick=async ()=>{
     payments.push({method:m2, amount:a2, cashGiven:(m2==='efectivo'?cash2:undefined)});
   }
 
-  // Items
   const items=[];
   for(const it of cart.values()){
     items.push({
@@ -744,7 +761,6 @@ document.getElementById('finishBtn').onclick=async ()=>{
     cart.clear(); renderCart(); focusScan();
     alert(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada en la nube ✅');
   }catch(err){
-    // Encola offline
     const q = getOutbox();
     q.push({ts:Date.now(), payload});
     setOutbox(q); updateOutboxUI();
