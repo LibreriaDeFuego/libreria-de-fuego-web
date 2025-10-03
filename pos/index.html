@@ -10,6 +10,7 @@ body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-appl
 a{color:#fff;text-decoration:none}
 button{cursor:pointer;font-weight:600}
 
+/* Layout con sidebar izquierdo */
 .layout{display:grid;grid-template-columns:220px 1fr;gap:12px;max-width:1200px;margin:0 auto;padding:12px}
 @media (max-width:900px){ .layout{grid-template-columns:1fr} }
 
@@ -40,6 +41,45 @@ td select{padding:6px}
 .actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;margin-top:8px}
 .small{font-size:12px;color:#9aa3b2}
+
+/* --- Sugerencias del buscador --- */
+.searchWrap{position:relative}
+.suggestBox{
+  position:absolute; top:44px; left:0; right:0;
+  background:#0e1116; border:1px solid #23262f; border-radius:12px;
+  padding:6px; max-height:360px; overflow:auto; z-index:9999;
+}
+.suggestItem{
+  display:flex; align-items:center; gap:10px;
+  padding:8px; border-radius:10px; cursor:pointer;
+}
+.suggestItem:hover, .suggestItem.active{background:#1a1f2b}
+.cover{
+  width:42px; height:60px; border-radius:10px; object-fit:cover; flex:0 0 auto; background:#1f2430;
+}
+.no-cover{
+  width:42px; height:60px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+  background:#1f2430; color:#cbd5e1; font-weight:700;
+}
+.meta{display:flex; flex-direction:column; gap:2px; min-width:0}
+.meta .t{font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.meta .a{font-size:12px; color:#9aa3b2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.meta .p{font-size:12px; color:#cbd5e1}
+
+/* --- Segmentador de descuento (botones) --- */
+.seg{display:inline-flex; border:1px solid #2a2f3a; border-radius:10px; overflow:hidden}
+.seg button{
+  padding:8px 10px; background:#0f1218; border:0; color:#e7ecf3; width:auto;
+}
+.seg button + button{border-left:1px solid #2a2f3a}
+.seg button.active{background:#243045}
+
+/* Chips de atajo (ej: -5%, -10%) */
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+.chip{
+  background:#1a1f2b; border:1px solid #2b3344; border-radius:999px; padding:6px 10px; font-size:12px; cursor:pointer;
+}
+.chip:hover{background:#243045}
 </style>
 </head>
 <body>
@@ -62,18 +102,23 @@ td select{padding:6px}
     <section class="card">
       <h2>Agregar al carrito</h2>
       <div class="grid grid-4">
+        <!-- ESCÁNER (código/ISBN) -->
         <div class="inline" style="gap:10px">
           <input id="scanInput" placeholder="Escanea o escribe código/ISBN">
           <button id="scanBtn" style="width:auto">Agregar</button>
         </div>
-        <div class="inline" style="gap:10px">
-          <input id="searchTitle" placeholder="Buscar por título">
-          <button id="pickBtn" style="width:auto">Añadir</button>
+
+        <!-- 🔎 Buscador unificado (título / autor / código) -->
+        <div class="searchWrap">
+          <input id="searchBar" placeholder="Buscar por título, autor o código" autocomplete="off">
+          <div id="searchResults" class="suggestBox" hidden></div>
         </div>
+
         <label class="inline" title="Si activas Modo Cambio, las cantidades se agregan negativas (devuelve stock)">
           <input id="returnMode" type="checkbox" style="width:auto"> Modo cambio / devolución
         </label>
-        <div class="inline small">Tip: con el lector basta escanear, se agrega solo y el foco vuelve al campo.</div>
+
+        <div class="inline small">Tip: escribe 2–3 letras y elige con clic o Enter. Con el lector basta escanear.</div>
       </div>
     </section>
 
@@ -98,12 +143,25 @@ td select{padding:6px}
         <!-- DESCUENTO GENERAL (sobre PVP) -->
         <div class="inline">
           <label class="small" style="width:140px">Descuento general</label>
-          <select id="globalDiscType" style="width:140px">
-            <option value="none">Ninguno</option>
-            <option value="percent">Porcentaje (%)</option>
-            <option value="amount">Monto ($)</option>
-          </select>
+
+          <!-- Botones tipo -->
+          <div class="seg" id="genSeg">
+            <button type="button" data-v="percent" class="active">%</button>
+            <button type="button" data-v="amount">$</button>
+          </div>
+
+          <!-- Valor -->
           <input id="globalDiscValue" type="number" min="0" value="0" style="max-width:140px">
+          <input id="globalDiscType" type="hidden" value="percent">
+
+          <!-- Atajos -->
+          <div class="chips" style="margin-left:8px">
+            <button class="chip" data-gen="p" data-val="5">-5%</button>
+            <button class="chip" data-gen="p" data-val="10">-10%</button>
+            <button class="chip" data-gen="p" data-val="15">-15%</button>
+            <button class="chip" data-gen="a" data-val="1000">-$1.000</button>
+            <button class="chip" data-gen="a" data-val="2000">-$2.000</button>
+          </div>
         </div>
 
         <!-- MÉTODO DE PAGO -->
@@ -150,22 +208,39 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7A
 /* ====== Helpers & API ====== */
 const IVA=0.19; // solo para convertir priceNet -> PVP al leer, luego NO se usa
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
-
 async function apiGet(action){ const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`); return r.json(); }
 async function apiPost(action,payload){
   const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
   return r.json();
 }
 
+/* ====== Cache productos ====== */
+const CACHE_TTL_MS = 10*60*1000; // 10 minutos
+let productCache = null;
+(function initCacheFromLS(){
+  try{
+    const raw = localStorage.getItem('pos_products_cache');
+    if(raw){ const {ts, arr} = JSON.parse(raw); productCache = {ts, arr}; }
+  }catch{}
+})();
+async function loadProductsCached(){
+  if(productCache && (Date.now()-productCache.ts)<CACHE_TTL_MS) return productCache.arr;
+  const arr = await cloudGetProducts();
+  productCache = {ts: Date.now(), arr};
+  try{ localStorage.setItem('pos_products_cache', JSON.stringify({ts:productCache.ts, arr})); }catch{}
+  return arr;
+}
+
 /* ====== Cloud ====== */
 async function cloudGetProducts(){
   const r = await apiGet('LIST_PRODUCTS'); if(!r.ok) throw new Error('LIST_PRODUCTS');
-  // Convertimos priceNet a PVP directamente y olvidamos el neto
   return r.data.map(p=>({
-    code:String(p.code),
-    title:String(p.title),
-    pricePVP:Number(p.priceNet||0) * (1+IVA),
-    stock:Number(p.stock||0)
+    code  : String(p.code),
+    title : String(p.title),
+    author: String(p.author || ''),
+    cover : String(p.cover || p.image || p.coverUrl || ''),
+    pricePVP: Number(p.priceNet||0) * (1+IVA), // SOLO para UI/boleta
+    stock : Number(p.stock||0)
   }));
 }
 async function cloudRegisterSale(sale){
@@ -174,11 +249,11 @@ async function cloudRegisterSale(sale){
 }
 
 /* ====== POS state ====== */
-// cart: Map code -> {code,title,pricePVP,qty,discType,discValue}
+// cart: Map code -> {code,title,pricePVP,qty,discType('none'|'percent'|'amount'),discValue}
 const cart=new Map();
 let lastTicketHTML='';
 
-function focusScan(){ const el=document.getElementById('scanInput'); el.focus(); el.select?.(); }
+function focusScan(){ const el=document.getElementById('scanInput'); el?.focus(); el?.select?.(); }
 
 function addOrInc(code, product){
   const negative = document.getElementById('returnMode').checked;
@@ -190,7 +265,7 @@ function addOrInc(code, product){
 }
 
 async function addByCode(code){
-  const products=await cloudGetProducts();
+  const products=await loadProductsCached();
   const p=products.find(r=>r.code===code);
   if(!p){ alert('Código no encontrado'); return; }
   if((p.stock||0)<=0 && !document.getElementById('returnMode').checked){
@@ -199,29 +274,19 @@ async function addByCode(code){
   addOrInc(code, p);
 }
 
-async function addByTitle(q){
-  const products=await cloudGetProducts();
-  const f=q.toLowerCase();
-  const p=products.find(r=>(r.title||'').toLowerCase().includes(f));
-  if(!p){ alert('No encontrado'); return; }
-  addOrInc(p.code, p);
-}
-
 /* ====== Cálculos SOBRE PVP ====== */
 function computeLine(it){
   const unit = Number(it.pricePVP||0);
   const qty  = Number(it.qty||0);
   let unitAfter = unit;
-
   if(it.discType==='percent'){
     unitAfter = unit * (1 - (Number(it.discValue||0)/100));
   }else if(it.discType==='amount'){
     unitAfter = Math.max(0, unit - Number(it.discValue||0));
-  }
-
+  } // 'none' -> unitAfter = unit
   const base = unit * qty;
-  const descLine = (base - unitAfter * qty); // descuento de la línea
-  const total = unitAfter * qty;             // total de la línea (PVP ya con desc. de línea)
+  const descLine = base - unitAfter * qty; // descuento de la línea
+  const total = unitAfter * qty;           // total de la línea (PVP tras desc. línea)
   return {unitAfter, base, descLine, total};
 }
 
@@ -232,8 +297,7 @@ function computeTotals(){
     subtotal += c.total;      // suma de líneas ya con desc. por línea
     descLineas += c.descLine; // suma de descuentos de línea
   }
-
-  const type = document.getElementById('globalDiscType').value;
+  const type = document.getElementById('globalDiscType').value; // 'percent'|'amount'
   const val  = Number(document.getElementById('globalDiscValue').value||0);
 
   let descGeneral = 0;
@@ -252,7 +316,8 @@ function renderCart(){
   for(const it of cart.values()){
     const c=computeLine(it);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${it.code}</td>
+    tr.innerHTML=`
+      <td>${it.code}</td>
       <td>${it.title}</td>
       <td class="inline" style="gap:6px">
         <button data-a="dec" data-code="${it.code}" style="width:auto;padding:6px 10px">−</button>
@@ -262,11 +327,11 @@ function renderCart(){
       <td>$${fmt(it.pricePVP)}</td>
       <td>
         <div class="inline" style="gap:6px;justify-content:flex-end">
-          <select data-a="discType" data-code="${it.code}" style="width:90px">
-            <option value="none" ${it.discType==='none'?'selected':''}>Ninguno</option>
-            <option value="percent" ${it.discType==='percent'?'selected':''}>%</option>
-            <option value="amount" ${it.discType==='amount'?'selected':''}>$</option>
-          </select>
+          <div class="seg" data-line="${it.code}">
+            <button type="button" data-a="discType" data-v="percent" class="${it.discType==='percent'?'active':''}">%</button>
+            <button type="button" data-a="discType" data-v="amount"  class="${it.discType==='amount'?'active':''}">$</button>
+            <button type="button" data-a="discNone"  class="${it.discType==='none'?'active':''}">sin</button>
+          </div>
           <input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" style="max-width:110px" />
         </div>
       </td>
@@ -275,7 +340,7 @@ function renderCart(){
     tb.appendChild(tr);
   }
 
-  // Wire botones/inputs
+  // botones de cantidad / quitar
   tb.querySelectorAll('button').forEach(b=>{
     const code=b.dataset.code, a=b.dataset.a;
     b.onclick=()=>{
@@ -286,11 +351,33 @@ function renderCart(){
       renderCart();
     };
   });
-  tb.querySelectorAll('select, input').forEach(el=>{
+
+  // botones de tipo de descuento por línea
+  tb.querySelectorAll('.seg[data-line]').forEach(seg=>{
+    seg.addEventListener('click', (e)=>{
+      if(e.target.tagName!=='BUTTON') return;
+      const code = seg.dataset.line;
+      const it = cart.get(code); if(!it) return;
+      const act = e.target.dataset.a;
+      seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      e.target.classList.add('active');
+      if(act==='discType'){
+        it.discType = e.target.dataset.v;            // 'percent' | 'amount'
+        if(!it.discValue) it.discValue = (it.discType==='percent'?1:100); // un mínimo visible
+      }else if(act==='discNone'){
+        it.discType = 'none';
+        it.discValue = 0;
+      }
+      renderCart();
+    });
+  });
+
+  // input del valor de descuento por línea
+  tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
-      if(el.dataset.a==='discType') it.discType = el.value;
-      if(el.dataset.a==='discValue') it.discValue = Number(el.value||0);
+      it.discValue = Number(el.value||0);
+      if(it.discType==='none' && it.discValue>0) it.discType='percent'; // si escribe valor, asumimos %
       renderCart();
     };
   });
@@ -323,7 +410,7 @@ function updateChange(){
 /* ====== Ticket (solo PVP) ====== */
 function buildTicketHTML(saleId, items, sums, method, isReturn){
   const lines = items.map(it=>{
-    const unitAfter = computeLine(it).unitAfter;
+    const {unitAfter} = computeLine(it);
     const d = it.discType==='percent' ? ` (-${it.discValue}% )` :
               it.discType==='amount'  ? ` (-$${fmt(it.discValue)} c/u)` : '';
     return `${it.qty} x ${it.title} — $${fmt(unitAfter)}${d}`;
@@ -347,6 +434,99 @@ function buildTicketHTML(saleId, items, sums, method, isReturn){
     </body></html>`;
 }
 
+/* ====== Buscador: normalización + fuzzy + UI ====== */
+const norm = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+function lev(a,b){
+  a=norm(a); b=norm(b);
+  const m=a.length, n=b.length; if(m===0) return n; if(n===0) return m;
+  const dp=new Array(n+1); for(let j=0;j<=n;j++) dp[j]=j;
+  for(let i=1;i<=m;i++){
+    let prev=dp[0], cur; dp[0]=i;
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1]===b[j-1] ? 0 : 1;
+      cur = Math.min(dp[j]+1, dp[j-1]+1, prev+cost);
+      prev = dp[j]; dp[j]=cur;
+    }
+  }
+  return dp[n];
+}
+function scoreProduct(p, q){
+  const T=norm(p.title), A=norm(p.author), C=norm(p.code), Q=norm(q);
+  if(!Q) return 0;
+  let s = 0;
+  if(T.startsWith(Q) || A.startsWith(Q)) s += 100;
+  else if(T.includes(Q) || A.includes(Q)) s += 70;
+  const d = Math.min(lev(T.slice(0, 32), Q.slice(0, 32)), lev(A.slice(0, 32), Q.slice(0, 32)));
+  if(d<=2) s += (50 - d*10); // 50/40/30
+  if(C === Q) s += 120;      // código exacto manda
+  return s;
+}
+
+let suggIndex = -1; // navegación con teclado
+const searchBar     = document.getElementById('searchBar');
+const searchResults = document.getElementById('searchResults');
+
+function hideSuggestions(){ searchResults.hidden = true; suggIndex=-1; }
+function showSuggestions(){ searchResults.hidden = false; }
+function renderSuggestions(list){
+  searchResults.innerHTML = '';
+  if(list.length===0){ hideSuggestions(); return; }
+  list.forEach((p, i)=>{
+    const row = document.createElement('div');
+    row.className = 'suggestItem' + (i===suggIndex ? ' active' : '');
+    let coverEl;
+    if(p.cover){
+      coverEl = document.createElement('img'); coverEl.className='cover'; coverEl.src=p.cover; coverEl.alt=p.title;
+    }else{
+      coverEl = document.createElement('div'); coverEl.className='no-cover'; coverEl.textContent=(p.title||'?').slice(0,1).toUpperCase();
+    }
+    const meta = document.createElement('div');
+    meta.className='meta';
+    meta.innerHTML = `
+      <div class="t">${p.title||'Sin título'}</div>
+      <div class="a">${p.author||'Autor desconocido'}</div>
+      <div class="p">$${fmt(p.pricePVP)}</div>
+    `;
+    row.appendChild(coverEl);
+    row.appendChild(meta);
+    row.onmousedown = (e)=>{ e.preventDefault(); addOrInc(p.code, p); hideSuggestions(); searchBar.value=''; searchBar.focus(); };
+    searchResults.appendChild(row);
+  });
+  showSuggestions();
+}
+
+let searchTimer = null;
+searchBar?.addEventListener('input', async (e)=>{
+  const q = e.target.value.trim();
+  clearTimeout(searchTimer);
+  if(q.length<1){ hideSuggestions(); return; }
+  searchTimer = setTimeout(async ()=>{
+    const products = await loadProductsCached();
+    const sorted = products
+      .map(p=>({p, s: scoreProduct(p, q)}))
+      .filter(x=>x.s>0)
+      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.p.title))
+      .slice(0, 12)
+      .map(x=>x.p);
+    renderSuggestions(sorted);
+  }, 220);
+});
+searchBar?.addEventListener('keydown', (e)=>{
+  if(searchResults.hidden) return;
+  const rows = Array.from(searchResults.children);
+  if(e.key==='ArrowDown'){ e.preventDefault(); suggIndex = Math.min(rows.length-1, suggIndex+1); rows.forEach((r,i)=>r.classList.toggle('active', i===suggIndex)); }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); suggIndex = Math.max(0, suggIndex-1); rows.forEach((r,i)=>r.classList.toggle('active', i===suggIndex)); }
+  else if(e.key==='Enter'){ e.preventDefault();
+    if(rows.length>0){
+      const pick = suggIndex>=0 ? rows[suggIndex] : rows[0];
+      pick.dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
+    }
+  }else if(e.key==='Escape'){ hideSuggestions(); }
+});
+document.addEventListener('click', (e)=>{
+  if(!searchResults.contains(e.target) && e.target!==searchBar){ hideSuggestions(); }
+});
+
 /* ====== Eventos ====== */
 // Agregar por código: botón
 document.getElementById('scanBtn').onclick=async ()=>{
@@ -364,22 +544,38 @@ document.getElementById('scanInput').addEventListener('keydown', async (e)=>{
 // Detecta salto de línea de algunos lectores
 document.getElementById('scanInput').addEventListener('input', async (e)=>{
   const v=e.target.value;
-  if(v.includes('\\n')){
-    const c=v.replace(/\\s+/g,'').trim();
+  if(v.includes('\n')){
+    const c=v.replace(/\s+/g,'').trim();
     if(c){ await addByCode(c); }
     e.target.value=''; focusScan();
   }
 });
 
-document.getElementById('pickBtn').onclick=async ()=>{
-  const t=document.getElementById('searchTitle').value.trim(); if(!t) return;
-  await addByTitle(t); document.getElementById('searchTitle').value='';
-};
-
-['globalDiscType','globalDiscValue','payMethod','cashGiven'].forEach(id=>{
-  document.getElementById(id).addEventListener('input',()=>{ if(id==='payMethod') updateChange(); renderCart(); });
+// Descuento general: segmentador y chips
+const genSeg = document.getElementById('genSeg');
+genSeg?.addEventListener('click', (e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const v = e.target.dataset.v; // 'percent' | 'amount'
+  document.getElementById('globalDiscType').value = v;
+  renderCart();
+});
+document.querySelectorAll('.chip[data-gen]').forEach(ch=>{
+  ch.addEventListener('click', ()=>{
+    const mode = ch.dataset.gen;      // 'p' (percent) o 'a' (amount)
+    const val  = Number(ch.dataset.val||0);
+    document.getElementById('globalDiscType').value = (mode==='p'?'percent':'amount');
+    genSeg.querySelectorAll('button').forEach(b=> b.classList.toggle('active', b.dataset.v === (mode==='p'?'percent':'amount')));
+    document.getElementById('globalDiscValue').value = val;
+    renderCart();
+  });
 });
 
+// Otros listeners
+['globalDiscValue','payMethod','cashGiven'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',()=>{ if(id==='payMethod') updateChange(); renderCart(); });
+});
 document.getElementById('clearBtn').onclick=()=>{ cart.clear(); renderCart(); focusScan(); };
 
 document.getElementById('finishBtn').onclick=async ()=>{
@@ -391,14 +587,13 @@ document.getElementById('finishBtn').onclick=async ()=>{
   for(const it of cart.values()){
     items.push({
       code: it.code, title: it.title, qty: it.qty,
-      // guardamos PVP como priceGross para claridad en backend (opcional)
-      priceGross: it.pricePVP,
+      priceGross: it.pricePVP, // guardamos PVP
       discType: it.discType, discValue: Number(it.discValue||0)
     });
   }
 
   try{
-    // Puedes adaptar el payload si tu backend espera neto; aquí enviamos totales en PVP:
+    // Enviamos totales en PVP (ajusta si tu backend requiere otro formato)
     const resp = await cloudRegisterSale({ items, method, total: sums.totalCompra, discounts: sums.descuentosTotales });
     const saleId = resp.saleId;
     const isReturn = document.getElementById('returnMode').checked;
