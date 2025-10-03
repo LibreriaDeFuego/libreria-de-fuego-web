@@ -224,9 +224,16 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7A
 /* ====== Helpers & API ====== */
 const IVA=0.19; // solo para convertir priceNet -> PVP al leer, luego NO se usa
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
-async function apiGet(action){ const r=await fetch(\`\${API_URL}?action=\${encodeURIComponent(action)}\`); return r.json(); }
+async function apiGet(action){
+  const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`,{mode:'cors',credentials:'omit'});
+  return r.json();
+}
 async function apiPost(action,payload){
-  const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,...payload})});
+  const r=await fetch(API_URL,{
+    method:'POST',mode:'cors',credentials:'omit',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({action,...payload})
+  });
   return r.json();
 }
 
@@ -361,30 +368,30 @@ function renderCart(){
     const tr=document.createElement('tr');
     tr.title = 'Doble clic: +1 • Alt+clic: −1 • Supr: quitar';
     tr.dataset.code = it.code;
-    tr.innerHTML=\`
-      <td>\${it.code}</td>
-      <td>\${it.title}</td>
+    tr.innerHTML=`
+      <td>${it.code}</td>
+      <td>${it.title}</td>
       <td class="inline" style="gap:6px">
-        <button data-a="dec" data-code="\${it.code}" style="width:auto;padding:6px 10px">−</button>
-        <span>\${it.qty}</span>
-        <button data-a="inc" data-code="\${it.code}" style="width:auto;padding:6px 10px">+</button>
+        <button data-a="dec" data-code="${it.code}" style="width:auto;padding:6px 10px">−</button>
+        <span>${it.qty}</span>
+        <button data-a="inc" data-code="${it.code}" style="width:auto;padding:6px 10px">+</button>
       </td>
       <td>
-        $\${fmt(it.pricePVP)}
-        \${ (it.discType!=='none' && Number(it.discValue)>0) ? \`<span class="finalcu">Final c/u: $\${fmt(c.unitAfter)}</span>\` : '' }
+        $${fmt(it.pricePVP)}
+        ${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }
       </td>
       <td>
         <div class="inline" style="gap:6px;justify-content:flex-end">
-          <div class="seg" data-line="\${it.code}">
-            <button type="button" data-a="discType" data-v="percent" class="\${it.discType==='percent'?'active':''}">%</button>
-            <button type="button" data-a="discType" data-v="amount"  class="\${it.discType==='amount'?'active':''}">$</button>
-            <button type="button" data-a="discNone"  class="\${it.discType==='none'?'active':''}">sin</button>
+          <div class="seg" data-line="${it.code}">
+            <button type="button" data-a="discType" data-v="percent" class="${it.discType==='percent'?'active':''}">%</button>
+            <button type="button" data-a="discType" data-v="amount"  class="${it.discType==='amount'?'active':''}">$</button>
+            <button type="button" data-a="discNone"  class="${it.discType==='none'?'active':''}">sin</button>
           </div>
-          <input type="number" min="0" value="\${it.discValue||0}" data-a="discValue" data-code="\${it.code}" style="max-width:110px" />
+          <input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" style="max-width:110px" />
         </div>
       </td>
-      <td class="lineTotal">$\${fmt(c.total)}</td>
-      <td><button data-a="del" data-code="\${it.code}">Quitar</button></td>\`;
+      <td class="lineTotal">$${fmt(c.total)}</td>
+      <td><button data-a="del" data-code="${it.code}">Quitar</button></td>`;
     tb.appendChild(tr);
 
     // selección y atajos
@@ -428,7 +435,7 @@ function renderCart(){
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       const priceTd = row.children[3];
-      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? \`<span class="finalcu">Final c/u: $\${fmt(c.unitAfter)}</span>\` : '' );
+      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' );
       updateTotalsUI();
     });
   });
@@ -448,7 +455,7 @@ function renderCart(){
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       const priceTd = row.children[3];
-      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? \`<span class="finalcu">Final c/u: $\${fmt(c.unitAfter)}</span>\` : '' );
+      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' );
       updateTotalsUI();
     };
   });
@@ -458,7 +465,7 @@ function renderCart(){
   document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
   document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
   const count = Array.from(cart.values()).reduce((a,it)=>a+Math.abs(it.qty),0);
-  document.getElementById('itemsCount').textContent=\`\${count} ítems\`;
+  document.getElementById('itemsCount').textContent=`${count} ítems`;
 
   updateChangeDisplays();
 }
@@ -502,26 +509,26 @@ function updateChangeDisplays(){
 function buildTicketHTML(saleId, items, sums, payments, isReturn){
   const lines = items.map(it=>{
     const {unitAfter} = computeLine(it);
-    const d = it.discType==='percent' ? \` (-\${it.discValue}% )\` :
-              it.discType==='amount'  ? \` (-$\${fmt(it.discValue)} c/u)\` : '';
-    return \`\${it.qty} x \${it.title} — $\${fmt(unitAfter)}\${d}\`;
+    const d = it.discType==='percent' ? ` (-${it.discValue}% )` :
+              it.discType==='amount'  ? ` (-$${fmt(it.discValue)} c/u)` : '';
+    return `${it.qty} x ${it.title} — $${fmt(unitAfter)}${d}`;
   }).join('<br>');
 
   const title = isReturn ? 'Ticket de Cambio' : 'Ticket de Venta';
-  const payText = payments.map(p=> \`\${p.method}: $\${fmt(p.amount)}\${p.cashGiven?\` (paga con $\${fmt(p.cashGiven)})\`:''}\`).join(' · ');
+  const payText = payments.map(p=> `${p.method}: $${fmt(p.amount)}${p.cashGiven?` (paga con $${fmt(p.cashGiven)})`:''}`).join(' · ');
 
-  return \`<!doctype html><html><head><meta charset='utf-8'><title>\${title}</title>
+  return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title>
     <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}
     hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head>
     <body>
       <h1>Librería de Fuego</h1>
-      <div>\${title} #\${saleId} — \${new Date().toLocaleString('es-CL')}</div>
-      <hr>\${lines}<hr>
-      <div>Descuentos totales: $\${fmt(sums.descuentosTotales)}</div>
-      <div><b>Total de compra: $\${fmt(sums.totalCompra)}</b></div>
-      <div>Pago: \${payText}</div>
+      <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
+      <hr>${lines}<hr>
+      <div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div>
+      <div><b>Total de compra: $${fmt(sums.totalCompra)}</b></div>
+      <div>Pago: ${payText}</div>
       <hr><small>Gracias por tu compra</small>
-    </body></html>\`;
+    </body></html>`;
 }
 
 /* ====== Omnibox: detección de código + búsqueda ====== */
@@ -531,29 +538,29 @@ let suggIndex = -1;
 function hideSuggestions(){ results.hidden = true; suggIndex=-1; }
 function showSuggestions(){ results.hidden = false; }
 
-const norm = s => (s||'').toString().normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+const norm = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
 // Checksums
 function ean13valid(d){
-  if(!/^\\d{13}$/.test(d)) return false;
+  if(!/^\d{13}$/.test(d)) return false;
   const a = d.split('').map(Number);
   const sum = a.slice(0,12).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
   const check = (10 - (sum % 10)) % 10;
   return check === a[12];
 }
 function ean8valid(d){
-  if(!/^\\d{8}$/.test(d)) return false;
+  if(!/^\d{8}$/.test(d)) return false;
   const a = d.split('').map(Number);
   const sum = a.slice(0,7).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
   const check = (10 - (sum % 10)) % 10;
   return check === a[7];
 }
 function isCodeLike(s){
-  const d = s.replace(/[^\\d]/g,'');
-  if(/^97[89]\\d{10}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
-  if(/^\\d{13}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
-  if(/^\\d{12}$/.test(d)) return {ok:true, code:d}; // UPC-A (sin checksum estricto)
-  if(/^\\d{8}$/.test(d) && ean8valid(d)) return {ok:true, code:d};
+  const d = s.replace(/[^\d]/g,'');
+  if(/^97[89]\d{10}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
+  if(/^\d{13}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
+  if(/^\d{12}$/.test(d)) return {ok:true, code:d}; // UPC-A (sin checksum estricto)
+  if(/^\d{8}$/.test(d) && ean8valid(d)) return {ok:true, code:d};
   return {ok:false};
 }
 
@@ -586,7 +593,7 @@ function scoreParts(p, q){
 function stockBadge(p){
   const s = Number(p.stock||0);
   if(s<=0) return '<span class="stock none">Sin stock</span>';
-  return \`<span class="stock good">Stock: \${s}</span>\`;
+  return `<span class="stock good">Stock: ${s}</span>`;
 }
 function renderSuggestions(list){
   results.innerHTML = '';
@@ -599,11 +606,11 @@ function renderSuggestions(list){
     if(p.cover){ coverEl = document.createElement('img'); coverEl.className='cover'; coverEl.src=p.cover; coverEl.alt=p.title; }
     else{ coverEl = document.createElement('div'); coverEl.className='no-cover'; coverEl.textContent=(p.title||'?').slice(0,1).toUpperCase(); }
     const meta = document.createElement('div'); meta.className='meta';
-    meta.innerHTML = \`
-      <div class="t">\${p.title||'Sin título'}</div>
-      <div class="a">\${p.author||'Autor desconocido'}</div>
-      <div class="p">$\${fmt(p.pricePVP)}</div>
-    \`;
+    meta.innerHTML = `
+      <div class="t">${p.title||'Sin título'}</div>
+      <div class="a">${p.author||'Autor desconocido'}</div>
+      <div class="p">$${fmt(p.pricePVP)}</div>
+    `;
     left.appendChild(coverEl); left.appendChild(meta);
     row.appendChild(left);
     const right = document.createElement('div'); right.innerHTML = stockBadge(p);
@@ -616,27 +623,20 @@ function renderSuggestions(list){
 }
 
 // Omnibox handlers
-let typingTimes = [];
 omni.addEventListener('keydown', (e)=>{
-  const now = performance.now();
-  typingTimes.push(now);
-  if(typingTimes.length>50) typingTimes.shift();
-
   if(e.key==='Enter'){
     e.preventDefault();
     const raw = omni.value.trim();
-    const val = raw.replace(/\\s+/g,'');
+    const val = raw.replace(/\s+/g,'');
     const codeChk = isCodeLike(val);
     if(codeChk.ok){
       addByCode(codeChk.code).then(()=>{ omni.value=''; hideSuggestions(); focusOmni(); });
       return;
     }
-    // si no es código, usar primera sugerencia o buscar
     const rows = Array.from(results.children);
     if(!results.hidden && rows.length>0){
       rows[0].dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
     }else{
-      // dispara búsqueda manual
       doSearch(val);
     }
   }else if(e.key==='Escape'){
@@ -647,7 +647,7 @@ omni.addEventListener('input', ()=>{
   const q = omni.value.trim();
   if(q.length<1){ hideSuggestions(); return; }
   // si parece código (todo números y largo típico) no mostrar sugerencias aún
-  const d = q.replace(/[^\\d]/g,'');
+  const d = q.replace(/[^\d]/g,'');
   if(d.length>=8 && d.length<=13){ return; }
   doSearch(q);
 });
@@ -659,7 +659,7 @@ async function doSearch(q){
     const sorted = products
       .map(p=>{ const sp = scoreParts(p, q); return {p, s: sp.total, matched: sp.matched}; })
       .filter(x=>x.s>0)
-      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.a?.p?.title||b.p.title))
+      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.p.title))
       .slice(0, 20)
       .map(x=>x.p);
     renderSuggestions(sorted);
