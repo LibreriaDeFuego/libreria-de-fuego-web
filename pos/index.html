@@ -1,229 +1,329 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Caja (POS) — Librería de Fuego (Cloud) — Omnibox</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Caja (POS) — Librería de Fuego — Papel & Tinta</title>
 <style>
-:root{--bg:#0b0c10;--card:#111318;--muted:#9aa3b2;--text:#e7ecf3;--line:#2a2f3a}
+:root{
+  /* Papel & Tinta */
+  --bg:#FAF7F2;          /* marfil */
+  --ink:#2B2A28;         /* texto */
+  --sepia:#5C4A3E;       /* tinta sepia */
+  --terra:#D26A38;       /* terracota (acentos/botones) */
+  --green:#2F7A52;       /* verde ticket */
+  --line:#E8E1D9;        /* borde claro */
+  --muted:#6E6258;       /* texto suave */
+  --card:#FFFFFF;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif}
-a{color:#fff;text-decoration:none}
-button{cursor:pointer;font-weight:600}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+h1,h2,h3{margin:0 0 10px}
+a{color:var(--terra);text-decoration:none}
+button{cursor:pointer;font-weight:600;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:10px 12px}
+button.primary{background:var(--terra);color:#fff;border-color:#C45F2F}
+button.green{background:var(--green);color:#fff;border-color:#276946}
+button.ghost{background:#fff;color:var(--sepia)}
+button:disabled{opacity:.6;cursor:not-allowed}
 
-/* Layout con sidebar izquierdo */
-.layout{display:grid;grid-template-columns:220px 1fr;gap:12px;max-width:1200px;margin:0 auto;padding:12px}
-@media (max-width:900px){ .layout{grid-template-columns:1fr} }
+.container{max-width:1200px;margin:0 auto;padding:16px}
+header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
 
-aside{position:sticky;top:12px;height:fit-content}
-.navbox{background:#0e1116;border:1px solid #23262f;border-radius:14px;padding:12px}
-.navbox h1{font-size:18px;margin:0 0 8px}
-.nav a{display:block;background:#1a1f2b;border:1px solid #2b3344;border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14px}
-.nav a:hover{background:#243045}
+/* Two-column layout */
+.grid{display:grid;gap:14px;grid-template-columns: 1.2fr .8fr}
+@media (max-width: 980px){ .grid{grid-template-columns:1fr} }
 
-main{display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(0,0,0,.04)}
+.card h2{font-size:16px}
 
-.card{background:#111318;border:1px solid #23262f;border-radius:14px;padding:14px}
-h2{font-size:14px;margin:0 0 10px 0}
-input,select,button{width:100%;padding:10px;border-radius:10px;border:1px solid var(--line);background:#0f1218;color:#e7ecf3}
-.badge{background:#1a1f2b;border:1px solid #2b3344;border-radius:999px;padding:6px 10px;color:#cbd5e1;font-size:12px}
+/* Left column blocks */
+.omniWrap{position:relative}
+.omniWrap input{width:100%;padding:14px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:16px}
+.suggestBox{
+  position:absolute;left:0;right:0;top:56px;background:#fff;border:1px solid var(--line);border-radius:12px;
+  max-height:360px;overflow:auto;z-index:9999;box-shadow:0 10px 24px rgba(0,0,0,.08)
+}
+.suggestItem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-radius:10px;cursor:pointer}
+.suggestItem:hover,.suggestItem.active{background:#FFF4EE} /* leve terracota diluida */
+.left{display:flex;align-items:center;gap:10px;min-width:0}
+.cover{width:42px;height:60px;border-radius:10px;object-fit:cover;background:#EEE;border:1px solid #E8E1D9;flex:0 0 auto}
+.no-cover{width:42px;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#EEE;color:#777;font-weight:700}
+.meta{display:flex;flex-direction:column;gap:2px;min-width:0}
+.meta .t{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .a{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta .p{font-size:12px;color:var(--sepia)}
+.stock{font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid var(--line)}
+.stock.good{background:#EFF7F1;border-color:#D5E9DB;color:#246744}
+.stock.none{background:#FCEDEA;border-color:#F2C7BB;color:#9A3C1D}
 
-.inline{display:flex;align-items:center;gap:8px}
-.grid{display:grid;gap:10px}
-.grid-4{grid-template-columns:1fr 1fr 1fr 1fr}
-
-table{width:100%;border-collapse:separate;border-spacing:0 8px}
-th,td{text-align:left;font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
-td input[type="number"]{padding:6px}
-.row-selected{background:#18202f}
-.actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.total{display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:18px;margin-top:8px}
 .small{font-size:12px;color:var(--muted)}
 
-/* --- Omnibox --- */
-.omniWrap{position:relative}
-.omniWrap input{font-size:16px;padding:14px 12px}
-.suggestBox{
-  position:absolute; top:54px; left:0; right:0;
-  background:#0e1116; border:1px solid #23262f; border-radius:12px;
-  padding:6px; max-height:360px; overflow:auto; z-index:9999;
-}
-@media (max-width:520px){
-  .suggestBox{ position:fixed; inset:8px; max-height:none; border-radius:14px; padding:10px }
-}
-.suggestItem{
-  display:flex; align-items:center; justify-content:space-between; gap:10px;
-  padding:10px; border-radius:10px; cursor:pointer;
-}
-.suggestItem:hover, .suggestItem.active{background:#1a1f2b}
-.suggestItem.no-stock{ background:#2a1b1b; } /* fila completa pintada cuando no hay stock */
-.left{display:flex; align-items:center; gap:10px; min-width:0}
-.cover{
-  width:42px; height:60px; border-radius:10px; object-fit:cover; flex:0 0 auto; background:#1f2430;
-}
-.no-cover{
-  width:42px; height:60px; border-radius:10px; display:flex; align-items:center; justify-content:center;
-  background:#1f2430; color:#cbd5e1; font-weight:700;
-}
-.meta{display:flex; flex-direction:column; gap:2px; min-width:0}
-.meta .t{font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.meta .a{font-size:12px; color:#9aa3b2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.meta .p{font-size:12px; color:#cbd5e1}
-.stock{font-size:11px; padding:4px 8px; border-radius:999px; border:1px solid #2b3344; color:#cbd5e1}
-.stock.good{background:#1b2a1b;border-color:#264b26}
-.stock.none{background:#2a1b1b;border-color:#4b2626}
+table{width:100%;border-collapse:separate;border-spacing:0 8px}
+th,td{text-align:left;font-size:12px;padding:10px;border-bottom:1px dashed var(--line);vertical-align:middle}
+td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);width:100%}
 
-/* --- Segmentador de descuento (botones) --- */
-.seg{display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden}
-.seg button{padding:8px 10px; background:#0f1218; border:0; color:#e7ecf3; width:auto}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{padding:8px 10px;background:#fff;border:0;color:var(--ink);width:auto}
 .seg button + button{border-left:1px solid var(--line)}
-.seg button.active{background:#243045}
+.seg button.active{background:#FFE6D8} /* terracota pastel */
 
-/* PVP final por línea */
-.finalcu{display:block; font-size:11px; color:#9aa3b2; margin-top:2px}
-.tooltip{font-size:11px; color:#9aa3b2}
+.row-selected{background:#FFF4EE}
+
+/* Right column: Cobro */
+.totalBlock{display:flex;flex-direction:column;gap:8px}
+.totalDisplay{font-size:22px;font-weight:800;color:var(--ink)}
+.badges{display:flex;gap:8px;flex-wrap:wrap}
+.badge{background:#FFF1E9;border:1px solid #EEC8B3;color:#8A431E;border-radius:999px;padding:6px 10px;font-size:12px}
+.line{display:flex;align-items:center;gap:8px}
+
+/* Sticky bar */
+.stickyBar{
+  position:fixed;left:0;right:0;bottom:0;z-index:9000;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  background:rgba(250,247,242,.9);backdrop-filter:saturate(1.1) blur(6px);border-top:1px solid var(--line);padding:10px 12px
+}
+
+/* Toasts */
+#toasts{position:fixed;right:12px;bottom:74px;display:flex;flex-direction:column;gap:8px;z-index:9500}
+.toast{background:#FFFFFF;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:10px;font-size:14px;box-shadow:0 10px 20px rgba(0,0,0,.08)}
+.toast.err{border-color:#E7B2A3;background:#FFF4EE;color:#7E2E17}
+
+/* Modal (confirm + ayuda) */
+.modalScrim{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9600}
+.modal{background:#fff;border:1px solid var(--line);border-radius:14px;max-width:520px;width:92%;padding:16px;box-shadow:0 20px 40px rgba(0,0,0,.12)}
+.modal h3{margin:0 0 6px;font-size:18px}
+.modal p{margin:0 0 12px;color:var(--sepia)}
+.modal .row{display:flex;gap:8px;justify-content:flex-end}
+
+kbd{background:#FFF1E9;border:1px solid #EEC8B3;border-radius:6px;padding:2px 6px;font-size:12px}
+hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
 </style>
 </head>
 <body>
+<div class="container">
+  <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div class="brand">🧾 Caja (POS) — Librería de Fuego</div>
+    <div class="small">Ayuda <button id="helpOpen" class="ghost" title="Atajos y ayuda">?</button></div>
+  </header>
 
-<div class="layout">
-  <!-- Sidebar IZQUIERDO -->
-  <aside>
-    <div class="navbox">
-      <h1>🧾 Caja (POS)</h1>
-      <nav class="nav">
-        <a href="/">Inicio</a>
-        <a href="/inventario/">Inventario</a>
-        <a href="/reportes/">Reportes</a>
-      </nav>
-    </div>
-  </aside>
-
-  <!-- CONTENIDO -->
-  <main>
-    <section class="card">
-      <h2>Agregar al carrito</h2>
-      <div class="grid grid-4">
-        <!-- 🔎 Omnibox (código + búsqueda) -->
-        <div class="omniWrap" style="grid-column:1 / -1">
-          <input id="omniInput" placeholder="Escanea o escribe título, autor o código" autocomplete="off">
-          <div id="searchResults" class="suggestBox" hidden></div>
-        </div>
-
-        <label class="inline" title="Si activas Modo Cambio, las cantidades se agregan negativas (devuelve stock)">
-          <input id="returnMode" type="checkbox" style="width:auto"> Modo cambio / devolución
-        </label>
-
-        <div class="inline small">Doble clic fila: +1 • Alt+clic: −1 • Supr: quitar. Escanea o escribe, el campo se limpia y vuelve el foco solo.</div>
+  <section class="grid">
+    <!-- LEFT: productos & carrito -->
+    <div class="card">
+      <h2>Detalle de venta</h2>
+      <div class="omniWrap" style="margin-top:8px">
+        <input id="omniInput" placeholder="Escanea o escribe título, autor o código" autocomplete="off" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false" aria-haspopup="listbox">
+        <div id="searchResults" class="suggestBox" role="listbox" hidden></div>
       </div>
-    </section>
 
-    <section class="card">
-      <h2>Carrito</h2>
-      <table id="cartTable">
+      <div class="line small" style="margin-top:8px">
+        <label class="line" title="Si activas Modo cambio, las cantidades se agregan negativas (devuelve stock)">
+          <input id="returnMode" type="checkbox" style="width:auto;margin-right:6px"> Modo cambio / devolución
+        </label>
+        <span>• Doble clic fila: +1 • Alt+clic: −1 • Supr: quitar • <kbd>/</kbd> enfoca búsqueda</span>
+      </div>
+
+      <hr class="sep">
+
+      <table id="cartTable" aria-label="Carrito de venta">
         <thead>
           <tr>
-            <th>Código</th>
+            <th style="width:110px">Código</th>
             <th>Título</th>
-            <th>Cantidad</th>
-            <th>PVP</th>
-            <th>Descuento</th>
-            <th>Total</th>
-            <th></th>
+            <th style="width:140px">Cantidad</th>
+            <th style="width:120px">PVP</th>
+            <th style="width:220px">Descuento</th>
+            <th style="width:120px">Total</th>
+            <th style="width:70px"></th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
 
-      <div class="grid grid-4" style="margin-top:8px">
-        <!-- DESCUENTO GENERAL (sobre PVP) -->
-        <div class="inline">
-          <label class="small" style="width:140px">Descuento general</label>
-          <div class="seg" id="genSeg">
-            <button type="button" data-v="percent" class="active">%</button>
-            <button type="button" data-v="amount">$</button>
-          </div>
-          <input id="globalDiscValue" type="number" min="0" value="0" style="max-width:140px">
-          <input id="globalDiscType" type="hidden" value="percent">
-        </div>
+      <div class="line" style="margin-top:8px;justify-content:flex-end;flex-wrap:wrap;gap:10px">
+        <button id="retryOutboxBtn" class="ghost" style="display:none" title="Reenviar ventas pendientes">Reintentar pendientes</button>
+        <button id="clearBtn" class="ghost">Vaciar</button>
+      </div>
+    </div>
 
-        <!-- MÉTODO DE PAGO 1 -->
-        <div class="inline">
-          <label class="small" style="width:80px">Pago 1</label>
-          <select id="payMethod1">
-            <option value="efectivo">Efectivo</option>
-            <option value="debito">Débito</option>
-            <option value="credito">Crédito</option>
-            <option value="transferencia">Transferencia</option>
-          </select>
-        </div>
+    <!-- RIGHT: cobro -->
+    <div class="card">
+      <h2>💳 Cobro</h2>
 
-        <!-- Paga con / vuelto para método 1 -->
-        <div class="inline" id="cashBox1" style="display:none">
-          <label class="small" style="width:100px">Paga con</label>
-          <input id="cashGiven1" type="number" min="0" value="0" style="max-width:160px">
-          <span class="badge">Vuelto: $<span id="cashChange1">0</span></span>
+      <!-- Descuento general -->
+      <div class="line" style="margin-top:10px;flex-wrap:wrap">
+        <label class="small" style="width:130px">Descuento general</label>
+        <div class="seg" id="genSeg">
+          <button type="button" data-v="percent" class="active">%</button>
+          <button type="button" data-v="amount">$</button>
         </div>
+        <input id="globalDiscValue" type="number" min="0" value="0" style="max-width:140px">
+        <input id="globalDiscType" type="hidden" value="percent">
+      </div>
 
-        <div class="inline">
-          <label class="small"><input id="splitToggle" type="checkbox" style="width:auto"> Dividir pago</label>
+      <hr class="sep">
+
+      <!-- Totales -->
+      <div class="totalBlock">
+        <div class="totalDisplay">Total: $<span id="grandTotal">0</span></div>
+        <div class="badges">
+          <span class="badge">Ítems: <span id="itemsCount">0</span></span>
+          <span class="badge">Descuentos totales: $<span id="sumAllDiscounts">0</span></span>
         </div>
       </div>
 
-      <!-- Split payment section -->
-      <div id="splitSection" class="grid grid-4" style="margin-top:8px; display:none">
-        <div class="inline">
+      <hr class="sep">
+
+      <!-- Métodos de pago -->
+      <div class="line" style="flex-wrap:wrap">
+        <label class="small" style="width:80px">Pago 1</label>
+        <select id="payMethod1" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
+          <option value="efectivo">Efectivo</option>
+          <option value="debito">Débito</option>
+          <option value="credito">Crédito</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
+      </div>
+
+      <div class="line" id="cashBox1" style="display:none;flex-wrap:wrap;margin-top:6px">
+        <label class="small" style="width:100px">Paga con</label>
+        <input id="cashGiven1" type="number" min="0" value="0" style="max-width:160px">
+        <span class="badge">Vuelto: $<span id="cashChange1">0</span></span>
+      </div>
+
+      <div class="line" style="margin-top:10px">
+        <label class="small"><input id="splitToggle" type="checkbox" style="width:auto;margin-right:6px"> Dividir pago</label>
+      </div>
+
+      <!-- Split payment -->
+      <div id="splitSection" style="display:none">
+        <div class="line" style="margin-top:8px;flex-wrap:wrap">
           <label class="small" style="width:80px">Monto 1</label>
           <input id="amount1" type="number" min="0" value="0">
         </div>
-
-        <div class="inline">
+        <div class="line" style="margin-top:8px;flex-wrap:wrap">
           <label class="small" style="width:80px">Pago 2</label>
-          <select id="payMethod2">
+          <select id="payMethod2" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
             <option value="debito">Débito</option>
             <option value="credito">Crédito</option>
             <option value="transferencia">Transferencia</option>
             <option value="efectivo">Efectivo</option>
           </select>
         </div>
-
-        <div class="inline">
+        <div class="line" style="margin-top:8px;flex-wrap:wrap">
           <label class="small" style="width:80px">Monto 2</label>
           <input id="amount2" type="number" min="0" value="0">
         </div>
-
-        <div class="inline" id="cashBox2" style="display:none">
+        <div class="line" id="cashBox2" style="display:none;flex-wrap:wrap;margin-top:6px">
           <label class="small" style="width:100px">Paga con (2)</label>
           <input id="cashGiven2" type="number" min="0" value="0" style="max-width:160px">
           <span class="badge">Vuelto(2): $<span id="cashChange2">0</span></span>
         </div>
       </div>
 
-      <div class="actions">
-        <button id="retryOutboxBtn" style="display:none" title="Reenviar ventas pendientes">Reintentar pendientes</button>
-        <button id="finishBtn">Cobrar / Ticket</button>
-        <button id="reprintBtn" title="Reimprimir último ticket">Reimprimir</button>
-        <button id="clearBtn">Vaciar</button>
-      </div>
+      <hr class="sep">
 
-      <!-- RESUMEN SIMPLIFICADO -->
-      <div class="total">
-        <span id="itemsCount">0 ítems</span>
-        <span>
-          <span class="badge">Descuentos totales: $<span id="sumAllDiscounts">0</span></span>
-          <span class="badge">Total de compra: $<span id="grandTotal">0</span></span>
-        </span>
+      <div class="line" style="justify-content:flex-end;gap:8px;flex-wrap:wrap">
+        <button id="reprintBtn" class="ghost" title="Reimprimir último ticket">Reimprimir</button>
+        <button id="finishBtn" class="green">Cobrar / Ticket</button>
       </div>
-    </section>
-  </main>
+    </div>
+  </section>
+</div>
+
+<!-- Sticky total bar -->
+<div class="stickyBar" id="stickyBar" aria-live="polite">
+  <div><b>Total:</b> $<span id="grandTotalSticky">0</span> — <span id="itemsCountSticky">0 ítems</span></div>
+  <div class="line">
+    <button id="finishBtnSticky" class="green">Cobrar / Ticket</button>
+    <button id="helpOpen2" class="ghost" title="Ver atajos y ayuda">?</button>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div id="toasts" aria-live="polite" aria-atomic="true"></div>
+
+<!-- Confirm modal -->
+<div class="modalScrim" id="confirmScrim" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="modal">
+    <h3 id="confirmTitle">Confirmar</h3>
+    <p id="confirmMsg">¿Seguro?</p>
+    <div class="row">
+      <button id="confirmCancel" class="ghost">Cancelar</button>
+      <button id="confirmOk" class="primary">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Help modal (trial) -->
+<div class="modalScrim" id="helpScrim" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal">
+    <h3 id="helpTitle">Ayuda rápida</h3>
+    <p>
+      <kbd>Enter</kbd> agrega el primer resultado • <kbd>Esc</kbd> cierra sugerencias •
+      Doble clic en fila: +1 • <kbd>Alt</kbd>+clic: −1 • <kbd>Supr</kbd>: quitar fila •
+      <kbd>/</kbd> enfoca la búsqueda. (Modo prueba)
+    </p>
+    <div class="row">
+      <button id="helpClose" class="ghost">Cerrar</button>
+    </div>
+  </div>
 </div>
 
 <script>
 /* ====== CONFIG ====== */
 const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
 
-/* ====== Helpers & API ====== */
-const IVA=0.19; // solo para convertir priceNet -> PVP al leer, luego NO se usa
+/* ====== Helpers ====== */
+const IVA=0.19; // para convertir neto->PVP si viene como neto
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
+
+/* ====== Beep (solo error) ====== */
+let audioCtx=null;
+function ensureAudio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch{} } }
+function beepError(){
+  ensureAudio(); if(!audioCtx) return;
+  const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+  const now=audioCtx.currentTime;
+  o.frequency.setValueAtTime(280, now);
+  g.gain.setValueAtTime(0.0001, now);
+  g.gain.exponentialRampToValueAtTime(0.25, now+0.01);
+  g.gain.exponentialRampToValueAtTime(0.0001, now+0.18);
+  o.connect(g); g.connect(audioCtx.destination);
+  o.start(now); o.stop(now+0.2);
+}
+
+/* ====== Toasts ====== */
+function toast(msg, kind='ok', timeout=2400){
+  const box=document.getElementById('toasts');
+  const el=document.createElement('div');
+  el.className='toast '+(kind==='err'?'err':'');
+  el.textContent=msg;
+  box.appendChild(el);
+  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(6px)'; }, timeout-180);
+  setTimeout(()=>{ box.removeChild(el); }, timeout);
+}
+
+/* ====== Confirm ====== */
+function confirmBox(message){
+  return new Promise(res=>{
+    const scrim=document.getElementById('confirmScrim');
+    document.getElementById('confirmMsg').textContent=message||'¿Seguro?';
+    scrim.style.display='flex';
+    const ok=()=>{ cleanup(); res(true); };
+    const cancel=()=>{ cleanup(); res(false); };
+    function cleanup(){
+      okBtn.removeEventListener('click',ok);
+      cancelBtn.removeEventListener('click',cancel);
+      scrim.style.display='none';
+    }
+    const okBtn=document.getElementById('confirmOk');
+    const cancelBtn=document.getElementById('confirmCancel');
+    okBtn.addEventListener('click', ok);
+    cancelBtn.addEventListener('click', cancel);
+  });
+}
+
+/* ====== API ====== */
 async function apiGet(action){
   const r=await fetch(`${API_URL}?action=${encodeURIComponent(action)}`,{mode:'cors',credentials:'omit'});
   return r.json();
@@ -238,27 +338,27 @@ async function apiPost(action,payload){
 }
 
 /* ====== Cache productos ====== */
-const CACHE_TTL_MS = 10*60*1000; // 10 minutos
+const CACHE_TTL_MS = 10*60*1000;
 let productCache = null;
-(function initCacheFromLS(){
+(function initCache(){
   try{
     const raw = localStorage.getItem('pos_products_cache');
-    if(raw){ const {ts, arr} = JSON.parse(raw); productCache = {ts, arr}; }
+    if(raw){ const {ts,arr}=JSON.parse(raw); productCache={ts,arr}; }
   }catch{}
 })();
 async function loadProductsCached(){
   try{
     if(productCache && (Date.now()-productCache.ts)<CACHE_TTL_MS) return productCache.arr;
     const arr = await cloudGetProducts();
-    productCache = {ts: Date.now(), arr};
-    try{ localStorage.setItem('pos_products_cache', JSON.stringify({ts:productCache.ts, arr})); }catch{}
+    productCache = {ts:Date.now(), arr};
+    try{ localStorage.setItem('pos_products_cache', JSON.stringify(productCache)); }catch{}
     return arr;
   }catch(err){
-    alert('No se pudo cargar productos (LIST_PRODUCTS). Reintenta.'); throw err;
+    toast('No se pudo cargar productos (LIST_PRODUCTS).','err'); beepError(); throw err;
   }
 }
 
-/* ====== Cloud ====== */
+/* ====== Normalización campos nube ====== */
 function getAuthorField(p){
   let a = p.author ?? p.autor ?? p.autores ?? p.Author ?? p.Autor ?? p.authors ?? p.writer ?? p.creador ?? p.creators ?? '';
   if(Array.isArray(a)) a = a.map(x => (x?.name||x)).join(', ');
@@ -276,7 +376,7 @@ async function cloudGetProducts(){
     title : String(p.title||p.Titulo||p.titulo||'Sin título'),
     author: getAuthorField(p),
     cover : getCoverField(p),
-    pricePVP: Number(p.priceNet||0) * (1+IVA), // SOLO para UI/boleta
+    pricePVP: Number(p.priceNet||0) * (1+IVA),
     stock : Number(p.stock||p.Stock||0)
   }));
 }
@@ -286,34 +386,38 @@ async function cloudRegisterSale(sale){
   return r.data; // { saleId }
 }
 
-/* ====== POS state ====== */
+/* ====== Estado POS ====== */
 const cart=new Map();
+let selectedCode=null;
 let lastTicketHTML='';
-let selectedCode=null;        // para Supr
-let lastScan = {code:'', at:0}; // anti-doble escaneo
+let lastScan = {code:'', at:0};
 function focusOmni(){ const el=document.getElementById('omniInput'); el?.focus(); el?.select?.(); }
 
-function addOrInc(code, product){
-  const negative = document.getElementById('returnMode').checked;
-  const delta = negative ? -1 : 1;
-  const it = cart.get(code) || {code:product.code,title:product.title,pricePVP:product.pricePVP,qty:0,discType:'none',discValue:0};
-  it.qty += delta;
-  if (it.qty === 0) cart.delete(code); else cart.set(code,it);
-  renderCart();
+/* ====== Persistencia UI ====== */
+function saveUI(){
+  try{
+    localStorage.setItem('pos_ui', JSON.stringify({
+      pay1: document.getElementById('payMethod1').value,
+      pay2: document.getElementById('payMethod2')?.value || 'debito',
+      split: document.getElementById('splitToggle').checked,
+      gType: document.getElementById('globalDiscType').value,
+      gVal:  Number(document.getElementById('globalDiscValue').value||0)
+    }));
+  }catch{}
 }
-
-async function addByCode(code){
-  const now = Date.now();
-  if(lastScan.code===code && (now - lastScan.at) < 500) { return; } // anti-doble
-  lastScan = {code, at: now};
-
-  const products=await loadProductsCached();
-  const p=products.find(r=>r.code===code);
-  if(!p){ alert('Código no encontrado'); return; }
-  if((p.stock||0)<=0 && !document.getElementById('returnMode').checked){
-    if(!confirm('Sin stock. ¿Agregar igualmente?')) return;
-  }
-  addOrInc(code, p);
+function loadUI(){
+  try{
+    const u = JSON.parse(localStorage.getItem('pos_ui')||'null'); if(!u) return;
+    document.getElementById('payMethod1').value = u.pay1 || 'efectivo';
+    const pm2 = document.getElementById('payMethod2'); if(pm2) pm2.value = u.pay2 || 'debito';
+    document.getElementById('splitToggle').checked = !!u.split;
+    document.getElementById('globalDiscType').value = u.gType || 'percent';
+    document.getElementById('globalDiscValue').value = Number.isFinite(u.gVal)?u.gVal:0;
+    document.querySelectorAll('#genSeg button').forEach(b=>{
+      b.classList.toggle('active', b.dataset.v===(u.gType||'percent'));
+    });
+    document.getElementById('splitSection').style.display = u.split ? 'block' : 'none';
+  }catch{}
 }
 
 /* ====== Cálculos SOBRE PVP ====== */
@@ -341,23 +445,24 @@ function computeTotals(){
   }
   const type = document.getElementById('globalDiscType').value;
   const val  = Number(document.getElementById('globalDiscValue').value||0);
-
   let descGeneral = 0;
   if(type==='percent') descGeneral = subtotal * (val/100);
   else if(type==='amount') descGeneral = Math.min(subtotal, val);
-
   const descuentosTotales = Math.max(0, descLineas + descGeneral);
   const totalCompra = Math.max(0, subtotal - descGeneral);
-
   return { subtotal, descLineas, descGeneral, descuentosTotales, totalCompra };
 }
 
-/* === util: refrescar sólo badges y vuelto, sin redibujar tabla === */
 function updateTotalsUI(){
   const t=computeTotals();
   document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
   document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
+  document.getElementById('grandTotalSticky').textContent=fmt(t.totalCompra);
+  const count = Array.from(cart.values()).reduce((a,it)=>a+Math.abs(it.qty),0);
+  document.getElementById('itemsCount').textContent=fmt(count);
+  document.getElementById('itemsCountSticky').textContent=`${fmt(count)} ítems`;
   updateChangeDisplays();
+  saveUI();
 }
 
 /* ====== Render ====== */
@@ -366,22 +471,19 @@ function renderCart(){
   for(const it of cart.values()){
     const c=computeLine(it);
     const tr=document.createElement('tr');
-    tr.title = 'Doble clic: +1 • Alt+clic: −1 • Supr: quitar';
+    tr.title='Doble clic: +1 • Alt+clic: −1 • Supr: quitar';
     tr.dataset.code = it.code;
     tr.innerHTML=`
       <td>${it.code}</td>
       <td>${it.title}</td>
-      <td class="inline" style="gap:6px">
-        <button data-a="dec" data-code="${it.code}" style="width:auto;padding:6px 10px">−</button>
+      <td class="line" style="gap:6px">
+        <button data-a="dec" data-code="${it.code}" class="ghost" style="padding:6px 10px">−</button>
         <span>${it.qty}</span>
-        <button data-a="inc" data-code="${it.code}" style="width:auto;padding:6px 10px">+</button>
+        <button data-a="inc" data-code="${it.code}" class="ghost" style="padding:6px 10px">+</button>
       </td>
+      <td>$${fmt(it.pricePVP)}</td>
       <td>
-        $${fmt(it.pricePVP)}
-        ${ (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' }
-      </td>
-      <td>
-        <div class="inline" style="gap:6px;justify-content:flex-end">
+        <div class="line" style="gap:6px;justify-content:flex-end">
           <div class="seg" data-line="${it.code}">
             <button type="button" data-a="discType" data-v="percent" class="${it.discType==='percent'?'active':''}">%</button>
             <button type="button" data-a="discType" data-v="amount"  class="${it.discType==='amount'?'active':''}">$</button>
@@ -391,33 +493,31 @@ function renderCart(){
         </div>
       </td>
       <td class="lineTotal">$${fmt(c.total)}</td>
-      <td><button data-a="del" data-code="${it.code}">Quitar</button></td>`;
+      <td><button data-a="del" data-code="${it.code}" class="ghost">Quitar</button></td>`;
     tb.appendChild(tr);
 
-    // selección y atajos
-    tr.onclick = (ev)=>{ 
+    tr.onclick = (ev)=>{
       document.querySelectorAll('#cartTable tbody tr').forEach(r=>r.classList.remove('row-selected'));
-      tr.classList.add('row-selected'); selectedCode = it.code;
+      tr.classList.add('row-selected'); selectedCode=it.code;
       if(ev.altKey){ const item=cart.get(it.code); if(item){ item.qty--; if(item.qty===0) cart.delete(it.code); renderCart(); } }
     };
-    tr.ondblclick = ()=>{ const item=cart.get(it.code); if(item){ item.qty++; renderCart(); } };
+    tr.ondblclick=()=>{ const item=cart.get(it.code); if(item){ item.qty++; renderCart(); } };
   }
-
   // botones inc/dec/del
   tb.querySelectorAll('button').forEach(b=>{
     const code=b.dataset.code, a=b.dataset.a;
     b.onclick=()=>{
       const it=cart.get(code); if(!it) return;
       if(a==='inc') it.qty++;
-      if(a==='dec') it.qty=(it.qty>0?it.qty-1:it.qty-1);
+      if(a==='dec') it.qty = (document.getElementById('returnMode').checked ? it.qty-1 : Math.max(0,it.qty-1));
       if(a==='del') cart.delete(code);
+      if(it.qty===0) cart.delete(code);
       renderCart();
     };
   });
-
-  // botones de tipo de descuento por línea (sin re-render global)
+  // tipo descuento por línea
   tb.querySelectorAll('.seg[data-line]').forEach(seg=>{
-    seg.addEventListener('click', (e)=>{
+    seg.addEventListener('click',(e)=>{
       if(e.target.tagName!=='BUTTON') return;
       const code = seg.dataset.line;
       const it = cart.get(code); if(!it) return;
@@ -428,19 +528,15 @@ function renderCart(){
         it.discType = e.target.dataset.v;
         if(!it.discValue) it.discValue = (it.discType==='percent'?1:100);
       }else if(act==='discNone'){
-        it.discType = 'none';
-        it.discValue = 0;
+        it.discType='none'; it.discValue=0;
       }
       const row = seg.closest('tr');
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
-      const priceTd = row.children[3];
-      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' );
       updateTotalsUI();
     });
   });
-
-  // input valor descuento por línea
+  // valor descuento
   tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
@@ -454,58 +550,197 @@ function renderCart(){
       const row = el.closest('tr');
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
-      const priceTd = row.children[3];
-      priceTd.innerHTML = '$'+fmt(it.pricePVP)+( (it.discType!=='none' && Number(it.discValue)>0) ? `<span class="finalcu">Final c/u: $${fmt(c.unitAfter)}</span>` : '' );
       updateTotalsUI();
     };
   });
 
-  // Totales y conteos
-  const t=computeTotals();
-  document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
-  document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
-  const count = Array.from(cart.values()).reduce((a,it)=>a+Math.abs(it.qty),0);
-  document.getElementById('itemsCount').textContent=`${count} ítems`;
-
-  updateChangeDisplays();
+  updateTotalsUI();
 }
 
-/* ====== Pago y vuelto (incluye split) ====== */
+/* ====== Omnibox & búsqueda ====== */
+const omni = document.getElementById('omniInput');
+const results = document.getElementById('searchResults');
+let suggIndex=-1;
+function hideSuggestions(){ results.hidden = true; suggIndex=-1; omni.setAttribute('aria-expanded','false'); }
+function showSuggestions(){ results.hidden = false; omni.setAttribute('aria-expanded','true'); }
+
+const norm = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+// checksums
+function ean13valid(d){
+  if(!/^\d{13}$/.test(d)) return false;
+  const a = d.split('').map(Number);
+  const sum = a.slice(0,12).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
+  const check = (10 - (sum % 10)) % 10;
+  return check === a[12];
+}
+function ean8valid(d){
+  if(!/^\d{8}$/.test(d)) return false;
+  const a = d.split('').map(Number);
+  const sum = a.slice(0,7).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
+  const check = (10 - (sum % 10)) % 10;
+  return check === a[7];
+}
+function isCodeLike(s){
+  const d = s.replace(/[^\d]/g,'');
+  if(/^97[89]\d{10}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
+  if(/^\d{13}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
+  if(/^\d{12}$/.test(d)) return {ok:true, code:d};
+  if(/^\d{8}$/.test(d) && ean8valid(d)) return {ok:true, code:d};
+  return {ok:false};
+}
+
+// scoring
+function lev(a,b){
+  a=norm(a); b=norm(b);
+  const m=a.length, n=b.length; if(m===0) return n; if(n===0) return m;
+  const dp=new Array(n+1); for(let j=0;j<=n;j++) dp[j]=j;
+  for(let i=1;i<=m;i++){
+    let prev=dp[0], cur; dp[0]=i;
+    for(let j=1;j<=n;j++){
+      const cost = a[i-1]===b[j-1] ? 0 : 1;
+      cur = Math.min(dp[j]+1, dp[j-1]+1, prev+cost);
+      prev = dp[j]; dp[j]=cur;
+    }
+  }
+  return dp[n];
+}
+function scoreParts(p, q){
+  const T=norm(p.title), A=norm(p.author), Q=norm(q);
+  let titleScore = 0, authorScore = 0;
+  if(T.startsWith(Q)) titleScore += 100; else if(T.includes(Q)) titleScore += 70;
+  if(A.startsWith(Q)) authorScore+= 100; else if(A.includes(Q)) authorScore+= 70;
+  const dt = lev(T.slice(0,32), Q.slice(0,32)); if(dt<=2) titleScore += (50 - dt*10);
+  const da = lev(A.slice(0,32), Q.slice(0,32)); if(da<=2) authorScore+= (50 - da*10);
+  const total = Math.max(titleScore, authorScore);
+  return {total};
+}
+function stockBadge(p){
+  const s = Number(p.stock||0);
+  if(s<=0) return '<span class="stock none">Sin stock</span>';
+  return `<span class="stock good">Stock: ${s}</span>`;
+}
+function renderSuggestions(list){
+  results.innerHTML = '';
+  if(list.length===0){ hideSuggestions(); return; }
+  list.forEach((p, i)=>{
+    const row = document.createElement('div');
+    row.className = 'suggestItem' + (i===suggIndex ? ' active' : '');
+    row.setAttribute('role','option');
+    const left = document.createElement('div'); left.className='left';
+    let coverEl;
+    if(p.cover){ coverEl = document.createElement('img'); coverEl.className='cover'; coverEl.src=p.cover; coverEl.alt=p.title; }
+    else{ coverEl = document.createElement('div'); coverEl.className='no-cover'; coverEl.textContent=(p.title||'?').slice(0,1).toUpperCase(); }
+    const meta = document.createElement('div'); meta.className='meta';
+    meta.innerHTML = `
+      <div class="t">${p.title||'Sin título'}</div>
+      <div class="a">${p.author||'Autor desconocido'}</div>
+      <div class="p">$${fmt(p.pricePVP)}</div>
+    `;
+    left.appendChild(coverEl); left.appendChild(meta);
+    row.appendChild(left);
+    const right = document.createElement('div'); right.innerHTML = stockBadge(p);
+    row.appendChild(right);
+    row.onmousedown = (e)=>{ e.preventDefault(); addOrInc(p.code, p); hideSuggestions(); omni.value=''; focusOmni(); };
+    results.appendChild(row);
+  });
+  showSuggestions();
+}
+
+let searchTimer=null;
+async function doSearch(q){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(async ()=>{
+    const products = await loadProductsCached();
+    const sorted = products
+      .map(p=>({p, s: scoreParts(p, q).total}))
+      .filter(x=>x.s>0)
+      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.p.title))
+      .slice(0, 20)
+      .map(x=>x.p);
+    renderSuggestions(sorted);
+  }, 160);
+}
+omni.addEventListener('keydown',(e)=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    const raw = omni.value.trim();
+    const val = raw.replace(/\s+/g,'');
+    const chk = isCodeLike(val);
+    if(chk.ok){
+      addByCode(chk.code).then(()=>{ omni.value=''; hideSuggestions(); focusOmni(); });
+      return;
+    }
+    const rows = Array.from(results.children);
+    if(!results.hidden && rows.length>0){
+      rows[0].dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));
+    }else{
+      doSearch(raw);
+    }
+  }else if(e.key==='Escape'){ hideSuggestions(); }
+  else if(e.key==='/'){ e.preventDefault(); focusOmni(); }
+});
+omni.addEventListener('input', ()=>{
+  const q = omni.value.trim();
+  if(q.length<1){ hideSuggestions(); return; }
+  const d = q.replace(/[^\d]/g,'');
+  if(d.length>=8 && d.length<=13){ return; }
+  doSearch(q);
+});
+document.addEventListener('click',(e)=>{ if(!results.contains(e.target) && e.target!==omni){ hideSuggestions(); } });
+
+async function addByCode(code){
+  const now = Date.now();
+  if(lastScan.code===code && (now - lastScan.at) < 500) { return; }
+  lastScan = {code, at: now};
+  const products=await loadProductsCached();
+  const p=products.find(r=>r.code===code);
+  if(!p){ toast('Código no encontrado','err'); beepError(); return; }
+  if((p.stock||0)<=0 && !document.getElementById('returnMode').checked){
+    const ok = await confirmBox('Sin stock. ¿Agregar igualmente?');
+    if(!ok) return;
+  }
+  addOrInc(code, p);
+}
+function addOrInc(code, product){
+  const negative = document.getElementById('returnMode').checked;
+  const delta = negative ? -1 : 1;
+  const it = cart.get(code) || {code:product.code,title:product.title,pricePVP:product.pricePVP,qty:0,discType:'none',discValue:0};
+  it.qty += delta;
+  if (it.qty === 0) { cart.delete(code); } else { cart.set(code,it); }
+  renderCart();
+}
+
+/* ====== Pago & vuelto ====== */
 function updateChangeDisplays(){
   const total = computeTotals().totalCompra;
-
   const method1 = document.getElementById('payMethod1').value;
   const split = document.getElementById('splitToggle').checked;
   const cashBox1 = document.getElementById('cashBox1');
   const cashBox2 = document.getElementById('cashBox2');
   cashBox1.style.display = (method1==='efectivo') ? 'flex' : 'none';
-
   if(!split){
     const given1 = Number(document.getElementById('cashGiven1').value||0);
     const change1 = Math.max(0, (method1==='efectivo' ? given1 : 0) - total);
-    document.getElementById('cashChange1').textContent = fmt(change1);
+    document.getElementById('cashChange1').textContent=fmt(change1);
     document.getElementById('splitSection').style.display='none';
     return;
   }
-
-  document.getElementById('splitSection').style.display='grid';
+  document.getElementById('splitSection').style.display='block';
   const method2 = document.getElementById('payMethod2').value;
   cashBox2.style.display = (method2==='efectivo') ? 'flex' : 'none';
-
   const a1 = Math.max(0, Number(document.getElementById('amount1').value||0));
   const a2 = Math.max(0, Number(document.getElementById('amount2').value||0));
   const g1 = Number(document.getElementById('cashGiven1').value||0);
   const g2 = Number(document.getElementById('cashGiven2').value||0);
-
   const cashPaid = (method1==='efectivo'?g1:0) + (method2==='efectivo'?g2:0);
   const nonCashPaid = (method1!=='efectivo'?a1:0) + (method2!=='efectivo'?a2:0);
   const change = Math.max(0, cashPaid + nonCashPaid - total);
-
   document.getElementById('cashChange1').textContent = fmt(method1==='efectivo' ? Math.max(0, g1 - (a1 || 0)) : 0);
   document.getElementById('cashChange2').textContent = fmt(method2==='efectivo' ? Math.max(0, g2 - (a2 || 0)) : 0);
 }
 
-/* ====== Ticket (solo PVP) ====== */
+/* ====== Ticket (simple HTML) ====== */
 function buildTicketHTML(saleId, items, sums, payments, isReturn){
   const lines = items.map(it=>{
     const {unitAfter} = computeLine(it);
@@ -531,182 +766,7 @@ function buildTicketHTML(saleId, items, sums, payments, isReturn){
     </body></html>`;
 }
 
-/* ====== Omnibox: detección de código + búsqueda ====== */
-const omni = document.getElementById('omniInput');
-const results = document.getElementById('searchResults');
-let suggIndex = -1;
-function hideSuggestions(){ results.hidden = true; suggIndex=-1; }
-function showSuggestions(){ results.hidden = false; }
-
-const norm = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-
-// Checksums
-function ean13valid(d){
-  if(!/^\d{13}$/.test(d)) return false;
-  const a = d.split('').map(Number);
-  const sum = a.slice(0,12).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
-  const check = (10 - (sum % 10)) % 10;
-  return check === a[12];
-}
-function ean8valid(d){
-  if(!/^\d{8}$/.test(d)) return false;
-  const a = d.split('').map(Number);
-  const sum = a.slice(0,7).reduce((acc,n,i)=> acc + (i%2? n*3 : n), 0);
-  const check = (10 - (sum % 10)) % 10;
-  return check === a[7];
-}
-function isCodeLike(s){
-  const d = s.replace(/[^\d]/g,'');
-  if(/^97[89]\d{10}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
-  if(/^\d{13}$/.test(d) && ean13valid(d)) return {ok:true, code:d};
-  if(/^\d{12}$/.test(d)) return {ok:true, code:d}; // UPC-A (sin checksum estricto)
-  if(/^\d{8}$/.test(d) && ean8valid(d)) return {ok:true, code:d};
-  return {ok:false};
-}
-
-// Scoring búsqueda (título/autor)
-function lev(a,b){
-  a=norm(a); b=norm(b);
-  const m=a.length, n=b.length; if(m===0) return n; if(n===0) return m;
-  const dp=new Array(n+1); for(let j=0;j<=n;j++) dp[j]=j;
-  for(let i=1;i<=m;i++){
-    let prev=dp[0], cur; dp[0]=i;
-    for(let j=1;j<=n;j++){
-      const cost = a[i-1]===b[j-1] ? 0 : 1;
-      cur = Math.min(dp[j]+1, dp[j-1]+1, prev+cost);
-      prev = dp[j]; dp[j]=cur;
-    }
-  }
-  return dp[n];
-}
-function scoreParts(p, q){
-  const T=norm(p.title), A=norm(p.author), Q=norm(q);
-  let titleScore = 0, authorScore = 0;
-  if(T.startsWith(Q)) titleScore += 100; else if(T.includes(Q)) titleScore += 70;
-  if(A.startsWith(Q)) authorScore+= 100; else if(A.includes(Q)) authorScore+= 70;
-  const dt = lev(T.slice(0,32), Q.slice(0,32)); if(dt<=2) titleScore += (50 - dt*10);
-  const da = lev(A.slice(0,32), Q.slice(0,32)); if(da<=2) authorScore+= (50 - da*10);
-  const total = Math.max(titleScore, authorScore);
-  const matched = authorScore>titleScore ? 'author' : 'title';
-  return {total, matched};
-}
-function stockBadge(p){
-  const s = Number(p.stock||0);
-  if(s<=0) return '<span class="stock none">Sin stock</span>';
-  return `<span class="stock good">Stock: ${s}</span>`;
-}
-function renderSuggestions(list){
-  results.innerHTML = '';
-  if(list.length===0){ hideSuggestions(); return; }
-  list.forEach((p, i)=>{
-    const row = document.createElement('div');
-    row.className = 'suggestItem' + (i===suggIndex ? ' active' : '') + ( (p.stock||0)<=0 ? ' no-stock' : '' );
-    const left = document.createElement('div'); left.className='left';
-    let coverEl;
-    if(p.cover){ coverEl = document.createElement('img'); coverEl.className='cover'; coverEl.src=p.cover; coverEl.alt=p.title; }
-    else{ coverEl = document.createElement('div'); coverEl.className='no-cover'; coverEl.textContent=(p.title||'?').slice(0,1).toUpperCase(); }
-    const meta = document.createElement('div'); meta.className='meta';
-    meta.innerHTML = `
-      <div class="t">${p.title||'Sin título'}</div>
-      <div class="a">${p.author||'Autor desconocido'}</div>
-      <div class="p">$${fmt(p.pricePVP)}</div>
-    `;
-    left.appendChild(coverEl); left.appendChild(meta);
-    row.appendChild(left);
-    const right = document.createElement('div'); right.innerHTML = stockBadge(p);
-    row.appendChild(right);
-
-    row.onmousedown = (e)=>{ e.preventDefault(); addOrInc(p.code, p); hideSuggestions(); omni.value=''; focusOmni(); };
-    results.appendChild(row);
-  });
-  showSuggestions();
-}
-
-// Omnibox handlers
-omni.addEventListener('keydown', (e)=>{
-  if(e.key==='Enter'){
-    e.preventDefault();
-    const raw = omni.value.trim();
-    const val = raw.replace(/\s+/g,'');
-    const codeChk = isCodeLike(val);
-    if(codeChk.ok){
-      addByCode(codeChk.code).then(()=>{ omni.value=''; hideSuggestions(); focusOmni(); });
-      return;
-    }
-    const rows = Array.from(results.children);
-    if(!results.hidden && rows.length>0){
-      rows[0].dispatchEvent(new MouseEvent('mousedown', {bubbles:true}));
-    }else{
-      doSearch(val);
-    }
-  }else if(e.key==='Escape'){
-    hideSuggestions();
-  }
-});
-omni.addEventListener('input', ()=>{
-  const q = omni.value.trim();
-  if(q.length<1){ hideSuggestions(); return; }
-  // si parece código (todo números y largo típico) no mostrar sugerencias aún
-  const d = q.replace(/[^\d]/g,'');
-  if(d.length>=8 && d.length<=13){ return; }
-  doSearch(q);
-});
-let searchTimer=null;
-async function doSearch(q){
-  clearTimeout(searchTimer);
-  searchTimer = setTimeout(async ()=>{
-    const products = await loadProductsCached();
-    const sorted = products
-      .map(p=>{ const sp = scoreParts(p, q); return {p, s: sp.total, matched: sp.matched}; })
-      .filter(x=>x.s>0)
-      .sort((a,b)=> b.s - a.s || a.p.title.localeCompare(b.p.title))
-      .slice(0, 20)
-      .map(x=>x.p);
-    renderSuggestions(sorted);
-  }, 200);
-}
-document.addEventListener('click', (e)=>{
-  if(!results.contains(e.target) && e.target!==omni){ hideSuggestions(); }
-});
-
-/* ====== Eventos generales ====== */
-// Descuento general: segmentador (sin re-render global)
-const genSeg = document.getElementById('genSeg');
-genSeg?.addEventListener('click', (e)=>{
-  if(e.target.tagName!=='BUTTON') return;
-  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  const v = e.target.dataset.v; // 'percent' | 'amount'
-  document.getElementById('globalDiscType').value = v;
-  updateTotalsUI();
-});
-document.getElementById('globalDiscValue').addEventListener('input', updateTotalsUI);
-
-// Split toggle
-document.getElementById('splitToggle').addEventListener('change', ()=>{
-  const total = computeTotals().totalCompra;
-  document.getElementById('amount1').value = total;
-  document.getElementById('amount2').value = 0;
-  updateChangeDisplays();
-});
-
-// Inputs que cambian cálculo de vuelto/montos
-['payMethod1','cashGiven1','payMethod2','cashGiven2','amount1','amount2'].forEach(id=>{
-  const el=document.getElementById(id);
-  el?.addEventListener('input', ()=> updateChangeDisplays());
-});
-
-// Confirmación al vaciar
-document.getElementById('clearBtn').onclick=()=>{
-  if(confirm('¿Vaciar el carrito?')){ cart.clear(); renderCart(); focusOmni(); }
-};
-
-// Supr para quitar fila seleccionada
-document.addEventListener('keydown',(e)=>{
-  if(e.key==='Delete' && selectedCode){ cart.delete(selectedCode); selectedCode=null; renderCart(); }
-});
-
-/* ====== Cola offline ====== */
+/* ====== Outbox offline ====== */
 function getOutbox(){ try{ return JSON.parse(localStorage.getItem('pos_outbox')||'[]'); }catch{ return []; } }
 function setOutbox(arr){ try{ localStorage.setItem('pos_outbox', JSON.stringify(arr)); }catch{} }
 function updateOutboxUI(){
@@ -718,54 +778,41 @@ async function processOutbox(){
   if(q.length===0) return;
   const remaining=[];
   for(const sale of q){
-    try{
-      await cloudRegisterSale(sale.payload);
-    }catch{
-      remaining.push(sale);
-    }
+    try{ await cloudRegisterSale(sale.payload); }
+    catch{ remaining.push(sale); }
   }
-  setOutbox(remaining);
-  updateOutboxUI();
+  setOutbox(remaining); updateOutboxUI();
 }
 setInterval(processOutbox, 30000);
-document.getElementById('retryOutboxBtn').onclick=processOutbox;
+document.getElementById('retryOutboxBtn')?.addEventListener('click', processOutbox);
 
-/* ====== Cobro ====== */
-document.getElementById('finishBtn').onclick=async ()=>{
-  if(cart.size===0){ alert('Carrito vacío'); focusOmni(); return; }
+/* ====== Cobrar ====== */
+async function cobrar(){
+  if(cart.size===0){ toast('Carrito vacío','err'); beepError(); focusOmni(); return; }
   const sums = computeTotals();
   const split = document.getElementById('splitToggle').checked;
-
-  let payments = [];
+  let payments=[];
   const m1 = document.getElementById('payMethod1').value;
   if(!split){
     const cash1 = Number(document.getElementById('cashGiven1').value||0);
-    payments.push({method: m1, amount: sums.totalCompra, cashGiven: (m1==='efectivo'?cash1:undefined)});
+    payments.push({method:m1, amount:sums.totalCompra, cashGiven:(m1==='efectivo'?cash1:undefined)});
   }else{
     const m2 = document.getElementById('payMethod2').value;
     const a1 = Math.max(0, Number(document.getElementById('amount1').value||0));
     const a2 = Math.max(0, Number(document.getElementById('amount2').value||0));
     const cash1 = Number(document.getElementById('cashGiven1').value||0);
     const cash2 = Number(document.getElementById('cashGiven2').value||0);
-
     const sum = a1 + a2;
     if(Math.abs(sum - sums.totalCompra) > 1){
-      alert('La suma de montos (pago dividido) debe ser igual al Total de compra.');
-      return;
+      toast('La suma de montos (pago dividido) debe ser igual al Total de compra.','err'); beepError(); return;
     }
     payments.push({method:m1, amount:a1, cashGiven:(m1==='efectivo'?cash1:undefined)});
     payments.push({method:m2, amount:a2, cashGiven:(m2==='efectivo'?cash2:undefined)});
   }
 
-  const items=[];
-  for(const it of cart.values()){
-    items.push({
-      code: it.code, title: it.title, qty: it.qty,
-      priceGross: it.pricePVP,
-      discType: it.discType, discValue: Number(it.discValue||0)
-    });
+  const items=[]; for(const it of cart.values()){
+    items.push({code:it.code,title:it.title,qty:it.qty,priceGross:it.pricePVP,discType:it.discType,discValue:Number(it.discValue||0)});
   }
-
   const payload = { items, payments, total: sums.totalCompra, discounts: sums.descuentosTotales, returnMode: document.getElementById('returnMode').checked };
 
   try{
@@ -774,24 +821,64 @@ document.getElementById('finishBtn').onclick=async ()=>{
     const html = buildTicketHTML(saleId, items, sums, payments, payload.returnMode);
     lastTicketHTML = html;
     const w=window.open('','_blank','width=430,height=640'); w.document.write(html); w.document.close(); w.print();
-
     cart.clear(); renderCart(); focusOmni();
-    alert(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada en la nube ✅');
+    toast(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada ✅');
   }catch(err){
     const q = getOutbox();
     q.push({ts:Date.now(), payload});
     setOutbox(q); updateOutboxUI();
-    alert('Sin conexión o error de servidor. Venta guardada offline y se reintentará automáticamente.');
+    toast('Sin conexión. Venta guardada offline.','err'); beepError();
   }
-};
-
+}
+document.getElementById('finishBtn').onclick=cobrar;
+document.getElementById('finishBtnSticky').onclick=cobrar;
 document.getElementById('reprintBtn').onclick=()=>{
-  if(!lastTicketHTML){ alert('Aún no hay ticket para reimprimir'); return; }
+  if(!lastTicketHTML){ toast('Aún no hay ticket para reimprimir','err'); beepError(); return; }
   const w=window.open('','_blank','width=430,height=640'); w.document.write(lastTicketHTML); w.document.close(); w.print();
 };
 
+/* ====== Eventos generales ====== */
+document.getElementById('clearBtn').onclick=async ()=>{
+  const ok = await confirmBox('¿Vaciar el carrito?');
+  if(ok){ cart.clear(); renderCart(); focusOmni(); toast('Carrito vacío'); }
+};
+document.addEventListener('keydown',(e)=>{
+  if(e.key==='Delete' && selectedCode){ cart.delete(selectedCode); selectedCode=null; renderCart(); toast('Ítem eliminado'); }
+});
+// descuento general
+const genSeg=document.getElementById('genSeg');
+genSeg.addEventListener('click',(e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const v=e.target.dataset.v; document.getElementById('globalDiscType').value=v;
+  updateTotalsUI();
+});
+document.getElementById('globalDiscValue').addEventListener('input', updateTotalsUI);
+
+// split toggle
+document.getElementById('splitToggle').addEventListener('change', ()=>{
+  const total = computeTotals().totalCompra;
+  document.getElementById('amount1').value = total;
+  document.getElementById('amount2').value = 0;
+  updateChangeDisplays(); saveUI();
+});
+['payMethod1','cashGiven1','payMethod2','cashGiven2','amount1','amount2'].forEach(id=>{
+  const el=document.getElementById(id);
+  el?.addEventListener('input', updateChangeDisplays);
+  el?.addEventListener('change', saveUI);
+});
+
+/* ====== Ayuda (trial) ====== */
+function openHelp(){ document.getElementById('helpScrim').style.display='flex'; }
+function closeHelp(){ document.getElementById('helpScrim').style.display='none'; }
+document.getElementById('helpOpen').onclick=openHelp;
+document.getElementById('helpOpen2').onclick=openHelp;
+document.getElementById('helpClose').onclick=closeHelp;
+document.addEventListener('keydown', e=>{ if(e.key==='?' && !e.shiftKey){ openHelp(); }});
+
 // Inicial
-renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
+loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
 </script>
 </body>
 </html>
