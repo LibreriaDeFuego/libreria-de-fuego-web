@@ -97,6 +97,16 @@ td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--li
 
 kbd{background:#FFF1E9;border:1px solid #EEC8B3;border-radius:6px;padding:2px 6px;font-size:12px}
 hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
+
+/* === POS tweak: make the right-side Cobro card sticky and hide bottom bar === */
+.stickySide{ position:sticky; top:12px; align-self:start; max-height:calc(100vh - 24px); overflow:auto }
+@media (max-width: 980px){
+  /* On mobile/small screens, show Cobro first and keep it sticky at the top */
+  .cobroCard{ order:-1; position:sticky; top:10px; z-index:10 }
+}
+/* Hide redundant bottom sticky bar to avoid duplicated "Cobrar" */
+.stickyBar{ display:none }
+
 </style>
 </head>
 <body>
@@ -146,7 +156,7 @@ hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
     </div>
 
     <!-- RIGHT: cobro -->
-    <div class="card">
+    <div class="card cobroCard stickySide">
       <h2>💳 Cobro</h2>
 
       <!-- Descuento general -->
@@ -754,7 +764,17 @@ function buildTicketHTML(saleId, items, sums, payments, isReturn){
 
   return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title>
     <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}
-    hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head>
+    hr{border:none;border-top:1px dashed #888;margin:6px 0}
+/* === POS tweak: make the right-side Cobro card sticky and hide bottom bar === */
+.stickySide{ position:sticky; top:12px; align-self:start; max-height:calc(100vh - 24px); overflow:auto }
+@media (max-width: 980px){
+  /* On mobile/small screens, show Cobro first and keep it sticky at the top */
+  .cobroCard{ order:-1; position:sticky; top:10px; z-index:10 }
+}
+/* Hide redundant bottom sticky bar to avoid duplicated "Cobrar" */
+.stickyBar{ display:none }
+
+</style></head>
     <body>
       <h1>Librería de Fuego</h1>
       <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
