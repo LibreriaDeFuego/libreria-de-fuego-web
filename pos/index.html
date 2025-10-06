@@ -6,14 +6,14 @@
 <title>Caja (POS) — Librería de Fuego — Papel & Tinta</title>
 <style>
 :root{
-  /* Papel & Tinta */
-  --bg:#FAF7F2;          /* marfil */
-  --ink:#2B2A28;         /* texto */
-  --sepia:#5C4A3E;       /* tinta sepia */
-  --terra:#D26A38;       /* terracota (acentos/botones) */
-  --green:#2F7A52;       /* verde ticket */
-  --line:#E8E1D9;        /* borde claro */
-  --muted:#6E6258;       /* texto suave */
+  /* 🎉 Fiesta Vibrante */
+  --bg:#FFF9EB;          /* fondo durazno claro */
+  --ink:#1F1A17;         /* texto más contrastado */
+  --sepia:#6A3B2E;       /* marrón cálido */
+  --terra:#FF6B4A;       /* coral / botón principal */
+  --green:#00B37E;       /* verde celebración */
+  --line:#FFE3C7;        /* borde suave */
+  --muted:#7A6A60;       /* texto suave */
   --card:#FFFFFF;
 }
 *{box-sizing:border-box}
@@ -45,7 +45,7 @@ header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
   max-height:360px;overflow:auto;z-index:9999;box-shadow:0 10px 24px rgba(0,0,0,.08)
 }
 .suggestItem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-radius:10px;cursor:pointer}
-.suggestItem:hover,.suggestItem.active{background:#FFF4EE} /* leve terracota diluida */
+.suggestItem:hover,.suggestItem.active{background:#FFF1D7} /* durazno suave */
 .left{display:flex;align-items:center;gap:10px;min-width:0}
 .cover{width:42px;height:60px;border-radius:10px;object-fit:cover;background:#EEE;border:1px solid #E8E1D9;flex:0 0 auto}
 .no-cover{width:42px;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#EEE;color:#777;font-weight:700}
@@ -66,7 +66,7 @@ td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--li
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{padding:8px 10px;background:#fff;border:0;color:var(--ink);width:auto}
 .seg button + button{border-left:1px solid var(--line)}
-.seg button.active{background:#FFE6D8} /* terracota pastel */
+.seg button.active{background:#FFE3BD} /* durazno pastel */
 
 .row-selected{background:#FFF4EE}
 
@@ -74,7 +74,7 @@ td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--li
 .totalBlock{display:flex;flex-direction:column;gap:8px}
 .totalDisplay{font-size:22px;font-weight:800;color:var(--ink)}
 .badges{display:flex;gap:8px;flex-wrap:wrap}
-.badge{background:#FFF1E9;border:1px solid #EEC8B3;color:#8A431E;border-radius:999px;padding:6px 10px;font-size:12px}
+.badge{background:#FFF4CC;border:1px solid #FFDCA3;color:#7A3E00;border-radius:999px;padding:6px 10px;font-size:12px}
 .line{display:flex;align-items:center;gap:8px}
 
 /* Sticky bar */
@@ -203,32 +203,6 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 /* Ensure discount value input never collapses */
 #cartTable td input[type="number"][data-a="discValue"]{ width:120px; min-width:120px; max-width:140px }
 
-
-/* === UI size scaling === */
-:root{ --fs: 1 } /* base font scale */
-body.size-compact{ --fs: .92 }
-body.size-comfy{ --fs: 1.06 }
-body.size-large{ --fs: 1.2 }
-
-/* Base text size scales with --fs */
-body{ font-size: calc(16px * var(--fs)); }
-
-/* Buttons and inputs scale paddings/heights */
-button{ padding: calc(var(--fs) * 10px) calc(var(--fs) * 12px); border-radius: calc(var(--fs) * 12px); }
-.omniWrap input{ padding: calc(var(--fs) * 14px) calc(var(--fs) * 12px); border-radius: calc(var(--fs) * 12px); font-size: 1em }
-
-/* Segmented controls heights */
-.seg button{ height: calc(var(--fs) * 34px); }
-
-/* Number inputs in table */
-td input[type="number"]{ padding: calc(var(--fs) * 8px); border-radius: calc(var(--fs) * 10px) }
-
-/* Totales prominence */
-.totalDisplay{ font-size: calc(var(--fs) * 22px); }
-
-/* Size selector styling */
-#uiSize{ padding: 4px 8px; border-radius: 8px; border:1px solid var(--line); background:#fff; color:var(--ink) }
-
 </style>
 </head>
 <body>
@@ -250,7 +224,7 @@ td input[type="number"]{ padding: calc(var(--fs) * 8px); border-radius: calc(var
         <a href="bodega.html">🏷️ Bodega</a>
       </nav>
     </div>
-    <div class="small">Tamaño <select id="uiSize" title="Tamaño de la interfaz"><option value="compacto">Compacto</option><option value="comodo" selected>Cómodo</option><option value="grande">Grande</option></select> · Ayuda <button id="helpOpen" class="ghost" title="Atajos y ayuda">?</button></div>
+    <div class="small">Ayuda <button id="helpOpen" class="ghost" title="Atajos y ayuda">?</button></div>
   </header>
 
   <section class="grid">
@@ -429,17 +403,9 @@ td input[type="number"]{ padding: calc(var(--fs) * 8px); border-radius: calc(var
 
 <script>
 /* ====== CONFIG ====== */
-const API_URL = (localStorage.getItem("pos_api_url") || "https://script.google.com/macros/s/AKfycbz700j5...ZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec");
+const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
 
 /* ====== Helpers ====== */
-
-/* ====== API URL override helper ====== */
-window.setPosApiUrl = function(url){
-  if(typeof url!=='string' || !url){ alert('URL inválida'); return; }
-  localStorage.setItem('pos_api_url', url);
-  alert('API URL guardada. Recarga la página.');
-};
-
 const IVA=0.19; // para convertir neto->PVP si viene como neto
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
 
@@ -704,38 +670,20 @@ function renderCart(){
   });
   // valor descuento
   tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
-    // Clear leading 0 on focus and restore 0 on blur if empty
-    el.onfocus = ()=>{ if(el.value==='0') el.value=''; };
-    el.onblur  = ()=>{ if(el.value===''||isNaN(Number(el.value))) { el.value='0'; el.dispatchEvent(new Event('input')); } };
-
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
       it.discValue = Math.max(0, Number(el.value||0));
-
-      // If there was no type and user typed a value, default to percent
       if(it.discType==='none' && it.discValue>0){
         const seg = el.closest('tr').querySelector('.seg[data-line]');
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
         seg.querySelector('button[data-v="percent"]').classList.add('active');
         it.discType='percent';
       }
-
-      // If percent selected and value > 100, auto-switch to $ (amount)
-      if(it.discType==='percent' && it.discValue>100){
-        it.discType='amount';
-        const seg = el.closest('tr').querySelector('.seg[data-line]');
-        if(seg){
-          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-          const btn = seg.querySelector('button[data-v="amount"]'); if(btn) btn.classList.add('active');
-        }
-      }
-
       const row = el.closest('tr');
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       updateTotalsUI();
     };
-  });
   });
 
   updateTotalsUI();
@@ -989,7 +937,7 @@ function buildTicketHTML(saleId, items, sums, payments, isReturn){
     <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}
     hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head>
     <body>
-      <h1>Librería de Fuego</h1><span id="apiStatus" class="badge" style="margin-left:8px">Conectando…</span>
+      <h1>Librería de Fuego</h1>
       <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
       <hr>${lines}<hr>
       <div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div>
@@ -1087,29 +1035,19 @@ genSeg.addEventListener('click',(e)=>{
   const v=e.target.dataset.v; document.getElementById('globalDiscType').value=v;
   updateTotalsUI();
 });
-(function(){
-  const gInput = document.getElementById('globalDiscValue');
-  const gType  = document.getElementById('globalDiscType');
-  const gSeg   = document.getElementById('genSeg');
-
-  // clear 0 on focus, restore 0 on blur
-  gInput.addEventListener('focus', ()=>{ if(gInput.value==='0') gInput.value=''; });
-  gInput.addEventListener('blur',  ()=>{ if(gInput.value===''||isNaN(Number(gInput.value))) { gInput.value='0'; updateTotalsUI(); } });
-
-  gInput.addEventListener('input', ()=>{
-    const v = Number(gInput.value||0);
-    // auto-switch to $ if >100 while in percent
-    if(gType.value==='percent' && v>100){
-      gType.value='amount';
-      // update seg UI
-      if(gSeg){
-        gSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        const btn = gSeg.querySelector('button[data-v="amount"]'); if(btn) btn.classList.add('active');
-      }
-    }
-    updateTotalsUI();
-  });
-})();
+// Improved global discount input: clear '0' on focus and auto-switch to $ if >100
+const gInput = document.getElementById('globalDiscValue');
+gInput.addEventListener('focus', ()=>{ if(gInput.value==='0'){ try{ gInput.select(); }catch{} gInput.value=''; } });
+gInput.addEventListener('input', ()=>{
+  const v = Number(gInput.value||0);
+  if(v > 100){
+    document.getElementById('globalDiscType').value = 'amount';
+    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    const amtBtn = genSeg.querySelector('button[data-v="amount"]');
+    if(amtBtn) amtBtn.classList.add('active');
+  }
+  updateTotalsUI();
+});
 
 // split toggle
 document.getElementById('splitToggle').addEventListener('change', ()=>{
@@ -1157,58 +1095,56 @@ renderCart = function(){
 };
 
 
-/* === UI size selector === */
-function applyUISize(mode){
-  const b=document.body;
-  b.classList.remove('size-compact','size-comfy','size-large');
-  if(mode==='compacto') b.classList.add('size-compact');
-  else if(mode==='grande') b.classList.add('size-large');
-  else b.classList.add('size-comfy');
-  const sel=document.getElementById('uiSize'); if(sel && sel.value!==mode) sel.value=mode;
-  try{
-    const u = JSON.parse(localStorage.getItem('pos_ui')||'{}');
-    u.size = mode;
-    localStorage.setItem('pos_ui', JSON.stringify(u));
-  }catch{}
-}
-(function initUISize(){
-  let mode='comodo';
-  try{
-    const u=JSON.parse(localStorage.getItem('pos_ui')||'{}');
-    if(u && u.size) mode=u.size;
-  }catch{}
-  applyUISize(mode);
-  document.getElementById('uiSize')?.addEventListener('change', (e)=>{
-    applyUISize(e.target.value);
+/* === UX: per-line discount inputs ===
+   - Clear preset '0' when focusing the discount value box
+   - If value > 100 and current type is %, auto-switch to $
+   - If type is 'none' and user types a value, switch to % (<=100) or $ (>100)
+*/
+(function(){
+  const tbody = document.querySelector('#cartTable tbody');
+  if(!tbody) return;
+
+  tbody.addEventListener('focusin', (e)=>{
+    const el = e.target;
+    if(el && el.matches('input[data-a="discValue"]')){
+      if(el.value === '0'){ try{ el.select(); }catch{} el.value = ''; }
+    }
+  });
+
+  tbody.addEventListener('input', (e)=>{
+    const el = e.target;
+    if(!(el && el.matches('input[data-a="discValue"]'))) return;
+    const code = el.dataset.code;
+    const it = cart.get(code);
+    if(!it) return;
+
+    const val = Number(el.value||0);
+    if(it.discType === 'none' && val > 0){
+      const seg = el.closest('tr')?.querySelector('.seg[data-line]');
+      if(val > 100){
+        it.discType = 'amount';
+        if(seg){
+          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+          seg.querySelector('button[data-v="amount"]').classList.add('active');
+        }
+      }else{
+        it.discType = 'percent';
+        if(seg){
+          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+          seg.querySelector('button[data-v="percent"]').classList.add('active');
+        }
+      }
+    }else if(it.discType === 'percent' && val > 100){
+      it.discType = 'amount';
+      const seg = el.closest('tr')?.querySelector('.seg[data-line]');
+      if(seg){
+        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        seg.querySelector('button[data-v="amount"]').classList.add('active');
+      }
+    }
+    updateTotalsUI();
   });
 })();
-
-
-/* ====== API Health ====== */
-async function apiHealthCheck(){
-  const badge = document.getElementById('apiStatus');
-  if(!badge) return;
-  const ok = (text)=>{ badge.textContent='Conectado'; badge.style.background='#E8FFE8'; badge.style.borderColor='#9AD19A'; badge.style.color='#176317'; };
-  const bad = (text)=>{ badge.textContent='Sin conexión'; badge.style.background='#FFE8E8'; badge.style.borderColor='#E8A1A1'; badge.style.color='#7A1F1F'; };
-
-  try{
-    // Try a lightweight ping; if your GAS doesn't support it, fallback to LIST_PRODUCTS
-    const r = await fetch(`${API_URL}?action=PING`,{mode:'cors',credentials:'omit'});
-    if(r.ok){ ok(); return; }
-    // Fallback
-    const r2 = await fetch(`${API_URL}?action=LIST_PRODUCTS`,{mode:'cors',credentials:'omit'});
-    if(r2.ok){ ok(); return; }
-    bad();
-  }catch(e){
-    try{
-      const r3 = await fetch(`${API_URL}?action=LIST_PRODUCTS`,{mode:'cors',credentials:'omit'});
-      if(r3.ok){ ok(); return; }
-    }catch{}
-    bad();
-  }
-}
-document.addEventListener('DOMContentLoaded', apiHealthCheck);
-
 </script>
 </body>
 </html>
