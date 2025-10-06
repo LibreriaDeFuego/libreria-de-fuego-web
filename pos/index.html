@@ -98,22 +98,159 @@ td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--li
 kbd{background:#FFF1E9;border:1px solid #EEC8B3;border-radius:6px;padding:2px 6px;font-size:12px}
 hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
 
-/* === POS tweak: make the right-side Cobro card sticky and hide bottom bar === */
+/* --- Nav links & layout --- */
+.topbar .leftBar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap }
+.navLinks{ display:flex; gap:8px; flex-wrap:wrap }
+.navLinks a{ padding:6px 10px; border:1px solid var(--line); border-radius:10px; font-size:13px; color:var(--ink); background:#fff }
+.navLinks a:hover{ background:#FFF4EE }
+
+/* --- Equal width segmented buttons (% / $ / sin) --- */
+.seg button{ display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:34px; padding:0 10px; line-height:1; }
+
+/* --- Row separator aligned across the entire row --- */
+table{ width:100%; border-collapse:separate; border-spacing:0 8px }
+th,td{ border-bottom:none } /* remove per-cell borders */
+#cartTable thead th{ border-bottom:1px dashed var(--line) } /* keep header underline */
+#cartTable tbody tr{ position:relative }
+#cartTable tbody tr::after{
+  content:""; position:absolute; left:0; right:0; bottom:-4px;
+  border-top:1px dashed var(--line);
+}
+
+/* --- Bodega panel list --- */
+.bodegaList{ display:flex; flex-direction:column; gap:8px; }
+.bodegaList .bitem{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px; border:1px dashed var(--line); border-radius:10px; background:#fff }
+.bodegaList .bitem .t{ font-weight:600 }
+
+
+/* === Ensure Cobro card is sticky on the right === */
 .stickySide{ position:sticky; top:12px; align-self:start; max-height:calc(100vh - 24px); overflow:auto }
 @media (max-width: 980px){
-  /* On mobile/small screens, show Cobro first and keep it sticky at the top */
   .cobroCard{ order:-1; position:sticky; top:10px; z-index:10 }
 }
-/* Hide redundant bottom sticky bar to avoid duplicated "Cobrar" */
+/* Keep bottom stickyBar hidden to avoid duplication */
 .stickyBar{ display:none }
+
+/* --- Equal halves only for global discount segmented control --- */
+#genSeg{ display:inline-flex; width:110px; } /* fixed comfortable width for two equal halves */
+#genSeg button{ flex:1 1 0; min-width:0; height:36px; padding:0; line-height:1; }
+
+
+/* === Per-line discount segmented control (Detalle de venta) === */
+#cartTable .seg[data-line]{ display:flex; flex:0 0 120px; max-width:120px }
+#cartTable .seg[data-line] button{ flex:1 1 0; min-width:0; height:34px; padding:0; line-height:1; }
+
+/* Keep the number input compact so column fits nicely */
+#cartTable td input[type="number"][data-a="discValue"]{ max-width:90px }
+
+/* === Vertical centering for tall rows (long titles) === */
+#cartTable tbody td{ vertical-align:middle }
+#cartTable tbody td .line{ align-items:center }  /* center flex children vertically */
+
+/* Optional: ensure +/- controls are consistent */
+#cartTable tbody td .line button.ghost{ height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px }
+
+
+/* === Collapsible left sidebar (icons -> labels on hover) === */
+.sideDock{
+  position:fixed; left:0; top:0; bottom:0; width:56px; background:#FFFFFF;
+  border-right:1px solid var(--line); z-index:9100; padding:10px 6px; display:flex;
+  flex-direction:column; gap:8px; transition:width .18s ease;
+  box-shadow:0 10px 24px rgba(0,0,0,.04);
+}
+.sideDock:hover{ width:200px }
+.sideDock .dockItem{
+  display:flex; align-items:center; gap:12px; padding:10px; border-radius:12px; color:var(--ink);
+  border:1px solid transparent; text-decoration:none; white-space:nowrap;
+}
+.sideDock .dockItem:hover{ background:#FFF4EE; border-color:#EEC8B3 }
+.sideDock .ico{ font-size:18px; width:24px; text-align:center }
+.sideDock .lbl{ opacity:0; transition:opacity .16s; }
+.sideDock:hover .lbl{ opacity:1 }
+
+/* Push main container to the right so sidebar doesn't overlap */
+.container{ margin-left:72px }
+
+/* Hide old header nav links */
+.navLinks{ display:none !important }
+
+/* === Per-line discount segment equal thirds + wider input === */
+#cartTable .seg[data-line]{
+  display:grid; grid-template-columns:repeat(3, 1fr); width:150px; min-width:150px; max-width:150px;
+}
+#cartTable .seg[data-line] button{ height:34px; padding:0; line-height:1; }
+#cartTable td input[type="number"][data-a="discValue"]{
+  width:120px; max-width:120px;
+}
+
+/* === Vertical centering for 'Cantidad' cells and row content === */
+#cartTable tbody td{ vertical-align:middle }
+#cartTable tbody td.line{ display:flex; align-items:center }
+
+
+/* === FIX: Vertical centering for 'Cantidad' column even with tall rows === */
+#cartTable tbody td.line{
+  display:table-cell !important; /* revert from flex to table-cell for equal row height */
+  vertical-align:middle !important;
+  text-align:center;
+  white-space:nowrap;
+}
+#cartTable tbody td.line span{ display:inline-block; margin:0 8px; }
+#cartTable tbody td.line button.ghost{
+  height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px;
+}
+
+/* Ensure discount value input never collapses */
+#cartTable td input[type="number"][data-a="discValue"]{ width:120px; min-width:120px; max-width:140px }
+
+
+/* === UI size scaling === */
+:root{ --fs: 1 } /* base font scale */
+body.size-compact{ --fs: .92 }
+body.size-comfy{ --fs: 1.06 }
+body.size-large{ --fs: 1.2 }
+
+/* Base text size scales with --fs */
+body{ font-size: calc(16px * var(--fs)); }
+
+/* Buttons and inputs scale paddings/heights */
+button{ padding: calc(var(--fs) * 10px) calc(var(--fs) * 12px); border-radius: calc(var(--fs) * 12px); }
+.omniWrap input{ padding: calc(var(--fs) * 14px) calc(var(--fs) * 12px); border-radius: calc(var(--fs) * 12px); font-size: 1em }
+
+/* Segmented controls heights */
+.seg button{ height: calc(var(--fs) * 34px); }
+
+/* Number inputs in table */
+td input[type="number"]{ padding: calc(var(--fs) * 8px); border-radius: calc(var(--fs) * 10px) }
+
+/* Totales prominence */
+.totalDisplay{ font-size: calc(var(--fs) * 22px); }
+
+/* Size selector styling */
+#uiSize{ padding: 4px 8px; border-radius: 8px; border:1px solid var(--line); background:#fff; color:var(--ink) }
 
 </style>
 </head>
 <body>
+
+<!-- Collapsible icon sidebar -->
+<aside class="sideDock" aria-label="Navegación principal">
+  <a href="inventario.html" class="dockItem" title="Inventario"><span class="ico">📚</span><span class="lbl">Inventario</span></a>
+  <a href="reportes.html" class="dockItem" title="Reportes"><span class="ico">📊</span><span class="lbl">Reportes</span></a>
+  <a href="bodega.html" class="dockItem" title="Bodega"><span class="ico">🏷️</span><span class="lbl">Bodega</span></a>
+</aside>
+
 <div class="container">
-  <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-    <div class="brand">🧾 Caja (POS) — Librería de Fuego</div>
-    <div class="small">Ayuda <button id="helpOpen" class="ghost" title="Atajos y ayuda">?</button></div>
+  <header class="topbar" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <div class="leftBar">
+      <div class="brand">🧾 Caja (POS) — Librería de Fuego</div>
+      <nav class="navLinks">
+        <a href="inventario.html">📚 Inventario</a>
+        <a href="reportes.html">📊 Reportes</a>
+        <a href="bodega.html">🏷️ Bodega</a>
+      </nav>
+    </div>
+    <div class="small">Tamaño <select id="uiSize" title="Tamaño de la interfaz"><option value="compacto">Compacto</option><option value="comodo" selected>Cómodo</option><option value="grande">Grande</option></select> · Ayuda <button id="helpOpen" class="ghost" title="Atajos y ayuda">?</button></div>
   </header>
 
   <section class="grid">
@@ -141,7 +278,7 @@ hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
             <th>Título</th>
             <th style="width:140px">Cantidad</th>
             <th style="width:120px">PVP</th>
-            <th style="width:220px">Descuento</th>
+            <th style="width:300px">Descuento</th>
             <th style="width:120px">Total</th>
             <th style="width:70px"></th>
           </tr>
@@ -153,10 +290,21 @@ hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
         <button id="retryOutboxBtn" class="ghost" style="display:none" title="Reenviar ventas pendientes">Reintentar pendientes</button>
         <button id="clearBtn" class="ghost">Vaciar</button>
       </div>
+    
+    <!-- LEFT: sugerencias de bodega -->
+    <div class="card" id="bodegaPanel">
+      <h2>🏷️ Bodega (reposiciones sugeridas)</h2>
+      <p class="small">Cuando vendas, aquí verás lo que conviene traer desde bodega.</p>
+      <div id="bodegaList" class="bodegaList">Sin sugerencias por ahora</div>
+      <div class="line" style="justify-content:flex-end;margin-top:8px">
+        <a class="ghost" href="bodega.html" title="Abrir página de Bodega">Abrir página de Bodega →</a>
+      </div>
     </div>
 
+</div>
+
     <!-- RIGHT: cobro -->
-    <div class="card cobroCard stickySide">
+    <div class="card">
       <h2>💳 Cobro</h2>
 
       <!-- Descuento general -->
@@ -281,9 +429,17 @@ hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
 
 <script>
 /* ====== CONFIG ====== */
-const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
+const API_URL = (localStorage.getItem("pos_api_url") || "https://script.google.com/macros/s/AKfycbz700j5...ZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec");
 
 /* ====== Helpers ====== */
+
+/* ====== API URL override helper ====== */
+window.setPosApiUrl = function(url){
+  if(typeof url!=='string' || !url){ alert('URL inválida'); return; }
+  localStorage.setItem('pos_api_url', url);
+  alert('API URL guardada. Recarga la página.');
+};
+
 const IVA=0.19; // para convertir neto->PVP si viene como neto
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
 
@@ -548,20 +704,38 @@ function renderCart(){
   });
   // valor descuento
   tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
+    // Clear leading 0 on focus and restore 0 on blur if empty
+    el.onfocus = ()=>{ if(el.value==='0') el.value=''; };
+    el.onblur  = ()=>{ if(el.value===''||isNaN(Number(el.value))) { el.value='0'; el.dispatchEvent(new Event('input')); } };
+
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
       it.discValue = Math.max(0, Number(el.value||0));
+
+      // If there was no type and user typed a value, default to percent
       if(it.discType==='none' && it.discValue>0){
         const seg = el.closest('tr').querySelector('.seg[data-line]');
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
         seg.querySelector('button[data-v="percent"]').classList.add('active');
         it.discType='percent';
       }
+
+      // If percent selected and value > 100, auto-switch to $ (amount)
+      if(it.discType==='percent' && it.discValue>100){
+        it.discType='amount';
+        const seg = el.closest('tr').querySelector('.seg[data-line]');
+        if(seg){
+          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+          const btn = seg.querySelector('button[data-v="amount"]'); if(btn) btn.classList.add('active');
+        }
+      }
+
       const row = el.closest('tr');
       const c = computeLine(it);
       row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       updateTotalsUI();
     };
+  });
   });
 
   updateTotalsUI();
@@ -721,6 +895,55 @@ function addOrInc(code, product){
   renderCart();
 }
 
+
+/* ====== Split auto-complete helpers ====== */
+let lastEditedSplit = 'amount1';
+function syncSplitFromA1(){
+  if(!document.getElementById('splitToggle').checked) return;
+  const total = computeTotals().totalCompra;
+  const a1El = document.getElementById('amount1');
+  const a2El = document.getElementById('amount2');
+  const a1 = Math.max(0, Number(a1El.value||0));
+  a2El.value = Math.max(0, total - a1);
+  updateChangeDisplays();
+}
+function syncSplitFromA2(){
+  if(!document.getElementById('splitToggle').checked) return;
+  const total = computeTotals().totalCompra;
+  const a1El = document.getElementById('amount1');
+  const a2El = document.getElementById('amount2');
+  const a2 = Math.max(0, Number(a2El.value||0));
+  a1El.value = Math.max(0, total - a2);
+  updateChangeDisplays();
+}
+
+/* ====== Bodega panel (simple suggestions based on current cart) ====== */
+function updateBodegaPanel(){
+  const box = document.getElementById('bodegaList'); if(!box) return;
+  const items = [];
+  for(const it of cart.values()){
+    const qty = Math.max(0, it.qty);
+    if(qty>0){
+      items.push({code:it.code, title:it.title, qty});
+    }
+  }
+  if(items.length===0){
+    box.textContent = 'Sin sugerencias por ahora';
+    return;
+  }
+  box.innerHTML = items.map(x => (
+    `<div class="bitem">
+      <div><div class="t">${x.title}</div><div class="small">Código: ${x.code}</div></div>
+      <button class="ghost" data-bcode="${x.code}" data-bqty="${x.qty}">Traer ${x.qty}</button>
+    </div>`
+  )).join('');
+  box.querySelectorAll('button[data-bcode]').forEach(btn=>{
+    btn.onclick = ()=>{
+      toast('Marcado para reposición desde bodega');
+    };
+  });
+}
+
 /* ====== Pago & vuelto ====== */
 function updateChangeDisplays(){
   const total = computeTotals().totalCompra;
@@ -764,19 +987,9 @@ function buildTicketHTML(saleId, items, sums, payments, isReturn){
 
   return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title>
     <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}
-    hr{border:none;border-top:1px dashed #888;margin:6px 0}
-/* === POS tweak: make the right-side Cobro card sticky and hide bottom bar === */
-.stickySide{ position:sticky; top:12px; align-self:start; max-height:calc(100vh - 24px); overflow:auto }
-@media (max-width: 980px){
-  /* On mobile/small screens, show Cobro first and keep it sticky at the top */
-  .cobroCard{ order:-1; position:sticky; top:10px; z-index:10 }
-}
-/* Hide redundant bottom sticky bar to avoid duplicated "Cobrar" */
-.stickyBar{ display:none }
-
-</style></head>
+    hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head>
     <body>
-      <h1>Librería de Fuego</h1>
+      <h1>Librería de Fuego</h1><span id="apiStatus" class="badge" style="margin-left:8px">Conectando…</span>
       <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
       <hr>${lines}<hr>
       <div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div>
@@ -874,7 +1087,29 @@ genSeg.addEventListener('click',(e)=>{
   const v=e.target.dataset.v; document.getElementById('globalDiscType').value=v;
   updateTotalsUI();
 });
-document.getElementById('globalDiscValue').addEventListener('input', updateTotalsUI);
+(function(){
+  const gInput = document.getElementById('globalDiscValue');
+  const gType  = document.getElementById('globalDiscType');
+  const gSeg   = document.getElementById('genSeg');
+
+  // clear 0 on focus, restore 0 on blur
+  gInput.addEventListener('focus', ()=>{ if(gInput.value==='0') gInput.value=''; });
+  gInput.addEventListener('blur',  ()=>{ if(gInput.value===''||isNaN(Number(gInput.value))) { gInput.value='0'; updateTotalsUI(); } });
+
+  gInput.addEventListener('input', ()=>{
+    const v = Number(gInput.value||0);
+    // auto-switch to $ if >100 while in percent
+    if(gType.value==='percent' && v>100){
+      gType.value='amount';
+      // update seg UI
+      if(gSeg){
+        gSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        const btn = gSeg.querySelector('button[data-v="amount"]'); if(btn) btn.classList.add('active');
+      }
+    }
+    updateTotalsUI();
+  });
+})();
 
 // split toggle
 document.getElementById('splitToggle').addEventListener('change', ()=>{
@@ -899,6 +1134,81 @@ document.addEventListener('keydown', e=>{ if(e.key==='?' && !e.shiftKey){ openHe
 
 // Inicial
 loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
+
+/* === Wire split amount auto-completion === */
+document.getElementById('amount1')?.addEventListener('input', ()=>{ lastEditedSplit='amount1'; syncSplitFromA1(); });
+document.getElementById('amount2')?.addEventListener('input', ()=>{ lastEditedSplit='amount2'; syncSplitFromA2(); });
+
+/* Re-sync when totals change (e.g., cart or discounts) */
+const _updateTotalsUI_orig = updateTotalsUI;
+updateTotalsUI = function(){
+  _updateTotalsUI_orig();
+  if(document.getElementById('splitToggle').checked){
+    if(lastEditedSplit==='amount1') syncSplitFromA1(); else syncSplitFromA2();
+  }
+  updateBodegaPanel();
+};
+
+/* Also refresh Bodega panel after cart renders */
+const _renderCart_orig = renderCart;
+renderCart = function(){
+  _renderCart_orig();
+  updateBodegaPanel();
+};
+
+
+/* === UI size selector === */
+function applyUISize(mode){
+  const b=document.body;
+  b.classList.remove('size-compact','size-comfy','size-large');
+  if(mode==='compacto') b.classList.add('size-compact');
+  else if(mode==='grande') b.classList.add('size-large');
+  else b.classList.add('size-comfy');
+  const sel=document.getElementById('uiSize'); if(sel && sel.value!==mode) sel.value=mode;
+  try{
+    const u = JSON.parse(localStorage.getItem('pos_ui')||'{}');
+    u.size = mode;
+    localStorage.setItem('pos_ui', JSON.stringify(u));
+  }catch{}
+}
+(function initUISize(){
+  let mode='comodo';
+  try{
+    const u=JSON.parse(localStorage.getItem('pos_ui')||'{}');
+    if(u && u.size) mode=u.size;
+  }catch{}
+  applyUISize(mode);
+  document.getElementById('uiSize')?.addEventListener('change', (e)=>{
+    applyUISize(e.target.value);
+  });
+})();
+
+
+/* ====== API Health ====== */
+async function apiHealthCheck(){
+  const badge = document.getElementById('apiStatus');
+  if(!badge) return;
+  const ok = (text)=>{ badge.textContent='Conectado'; badge.style.background='#E8FFE8'; badge.style.borderColor='#9AD19A'; badge.style.color='#176317'; };
+  const bad = (text)=>{ badge.textContent='Sin conexión'; badge.style.background='#FFE8E8'; badge.style.borderColor='#E8A1A1'; badge.style.color='#7A1F1F'; };
+
+  try{
+    // Try a lightweight ping; if your GAS doesn't support it, fallback to LIST_PRODUCTS
+    const r = await fetch(`${API_URL}?action=PING`,{mode:'cors',credentials:'omit'});
+    if(r.ok){ ok(); return; }
+    // Fallback
+    const r2 = await fetch(`${API_URL}?action=LIST_PRODUCTS`,{mode:'cors',credentials:'omit'});
+    if(r2.ok){ ok(); return; }
+    bad();
+  }catch(e){
+    try{
+      const r3 = await fetch(`${API_URL}?action=LIST_PRODUCTS`,{mode:'cors',credentials:'omit'});
+      if(r3.ok){ ok(); return; }
+    }catch{}
+    bad();
+  }
+}
+document.addEventListener('DOMContentLoaded', apiHealthCheck);
+
 </script>
 </body>
 </html>
