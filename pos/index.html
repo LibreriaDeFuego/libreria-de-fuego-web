@@ -1074,8 +1074,49 @@ document.addEventListener('keydown', e=>{ if(e.key==='?' && !e.shiftKey){ openHe
 loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
 
 /* === Wire split amount auto-completion === */
-document.getElementById('amount1')?.addEventListener('input', ()=>{ lastEditedSplit='amount1'; syncSplitFromA1(); });
-document.getElementById('amount2')?.addEventListener('input', ()=>{ lastEditedSplit='amount2'; syncSplitFromA2(); });
+/* === Wire split amount auto-completion === */
+document.getElementById('amount1')?.addEventListener('focus', ()=>{
+  const el = document.getElementById('amount1');
+  if(el.value === '0'){ el.value = ''; }
+});
+document.getElementById('amount2')?.addEventListener('focus', ()=>{
+  const el = document.getElementById('amount2');
+  if(el.value === '0'){ el.value = ''; }
+});
+
+document.getElementById('amount1')?.addEventListener('input', ()=>{
+  const el = document.getElementById('amount1');
+  el.value = Math.floor(Number(el.value) || 0);
+  lastEditedSplit='amount1';
+  syncSplitFromA1();
+});
+document.getElementById('amount2')?.addEventListener('input', ()=>{
+  const el = document.getElementById('amount2');
+  el.value = Math.floor(Number(el.value) || 0);
+  lastEditedSplit='amount2';
+  syncSplitFromA2();
+});
+
+/* Ajustar funciones de sincronización para redondear también */
+function syncSplitFromA1(){
+  if(!document.getElementById('splitToggle').checked) return;
+  const total = Math.round(computeTotals().totalCompra);
+  const a1El = document.getElementById('amount1');
+  const a2El = document.getElementById('amount2');
+  const a1 = Math.floor(Number(a1El.value||0));
+  a2El.value = Math.max(0, total - a1);
+  updateChangeDisplays();
+}
+function syncSplitFromA2(){
+  if(!document.getElementById('splitToggle').checked) return;
+  const total = Math.round(computeTotals().totalCompra);
+  const a1El = document.getElementById('amount1');
+  const a2El = document.getElementById('amount2');
+  const a2 = Math.floor(Number(a2El.value||0));
+  a1El.value = Math.max(0, total - a2);
+  updateChangeDisplays();
+}
+
 
 /* Re-sync when totals change (e.g., cart or discounts) */
 const _updateTotalsUI_orig = updateTotalsUI;
