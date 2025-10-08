@@ -1051,7 +1051,7 @@ gInput.addEventListener('input', ()=>{
 
 // split toggle
 document.getElementById('splitToggle').addEventListener('change', ()=>{
-  const total = computeTotals().totalCompra;
+  const total = Math.round(computeTotals().totalCompra);
   document.getElementById('amount1').value = total;
   document.getElementById('amount2').value = 0;
   updateChangeDisplays(); saveUI();
@@ -1061,7 +1061,17 @@ document.getElementById('splitToggle').addEventListener('change', ()=>{
   el?.addEventListener('input', updateChangeDisplays);
   el?.addEventListener('change', saveUI);
 });
-
+['cashGiven1','cashGiven2'].forEach(id=>{
+  const el = document.getElementById(id);
+  el?.addEventListener('focus', ()=>{
+    if(el.value === '0'){ el.value = ''; }      // borra el 0 al hacer click
+  });
+  el?.addEventListener('input', ()=>{
+    el.value = Math.floor(Number(el.value) || 0); // siempre enteros
+    updateChangeDisplays();
+  });
+});
+  
 /* ====== Ayuda (trial) ====== */
 function openHelp(){ document.getElementById('helpScrim').style.display='flex'; }
 function closeHelp(){ document.getElementById('helpScrim').style.display='none'; }
