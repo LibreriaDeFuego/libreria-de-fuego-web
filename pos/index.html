@@ -75,6 +75,7 @@ td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--li
 .totalDisplay{font-size:22px;font-weight:800;color:var(--ink)}
 .badges{display:flex;gap:8px;flex-wrap:wrap}
 .badge{background:#FFF4CC;border:1px solid #FFDCA3;color:#7A3E00;border-radius:999px;padding:6px 10px;font-size:12px}
+.vueltoXL{ font-size:20px; font-weight:800; letter-spacing:0.2px; }
 .line{display:flex;align-items:center;gap:8px}
 
 /* Sticky bar */
@@ -333,7 +334,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
   <div class="line cashStrip" id="cashBox1" style="display:none;flex-wrap:wrap;margin-top:6px">
     <label class="small" style="width:100px">Paga con</label>
     <input id="cashGiven1" type="number" min="0" value="0" style="max-width:160px">
-    <span class="badge">Vuelto: $<span id="cashChange1">0</span></span>
+    <span class="badge"><span class="vueltoXL">Vuelto: $<span id="cashChange1">0</span></span></span>
   </div>
 </div>
 
@@ -379,7 +380,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
     <div class="line cashStrip" id="cashBox2" style="display:none;flex-wrap:wrap;margin-top:6px">
       <label class="small" style="width:100px">Paga con (2)</label>
       <input id="cashGiven2" type="number" min="0" value="0" style="max-width:160px">
-      <span class="badge">Vuelto(2): $<span id="cashChange2">0</span></span>
+      <span class="badge"><span class="vueltoXL">Vuelto(2): $<span id="cashChange2">0</span></span></span>
     </div>
   </div>
 </div>
