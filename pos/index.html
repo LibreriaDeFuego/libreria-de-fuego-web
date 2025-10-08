@@ -203,6 +203,13 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 /* Ensure discount value input never collapses */
 #cartTable td input[type="number"][data-a="discValue"]{ width:120px; min-width:120px; max-width:140px }
 
+ /* === UI: Pay cards & cash strip (Puntos 1,4,5,6,9) === */
+.payCard{border:1px solid var(--line);border-radius:16px;background:#fff;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.03);margin-top:8px}
+.payHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.payHead .title{font-weight:800}
+.cashStrip{background:#FFF8E5;border:1px dashed var(--line);border-radius:12px;padding:10px}
+.methodBadge{background:#FFF4CC;border:1px solid #FFDCA3;color:#7A3E00;border-radius:999px;padding:6px 10px;font-size:12px}
+ 
 </style>
 </head>
 <body>
@@ -305,54 +312,79 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 
       <hr class="sep">
 
-      <!-- Métodos de pago -->
-      <div class="line" style="flex-wrap:wrap">
-        <label class="small" style="width:80px">Pago 1</label>
-        <select id="payMethod1" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
-          <option value="efectivo">Efectivo</option>
-          <option value="debito">Débito</option>
-          <option value="credito">Crédito</option>
-          <option value="transferencia">Transferencia</option>
-        </select>
-      </div>
+<!-- Métodos de pago (tarjetas) -->
+<div class="payCard" id="pay1Card">
+  <div class="payHead">
+    <div class="title">① Pago 1</div>
+    <span class="methodBadge" id="methodBadge1">Método</span>
+  </div>
 
-      <div class="line" id="cashBox1" style="display:none;flex-wrap:wrap;margin-top:6px">
-        <label class="small" style="width:100px">Paga con</label>
-        <input id="cashGiven1" type="number" min="0" value="0" style="max-width:160px">
-        <span class="badge">Vuelto: $<span id="cashChange1">0</span></span>
-      </div>
+  <div class="line" style="flex-wrap:wrap">
+    <label class="small" style="width:80px">Pago 1</label>
+    <select id="payMethod1" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
+      <option value="efectivo">Efectivo</option>
+      <option value="debito">Débito</option>
+      <option value="credito">Crédito</option>
+      <option value="transferencia">Transferencia</option>
+    </select>
+  </div>
 
-      <div class="line" style="margin-top:10px">
-        <label class="small"><input id="splitToggle" type="checkbox" style="width:auto;margin-right:6px"> Dividir pago</label>
-      </div>
+  <!-- EFECTIVO PAGO 1 -->
+  <div class="line cashStrip" id="cashBox1" style="display:none;flex-wrap:wrap;margin-top:6px">
+    <label class="small" style="width:100px">Paga con</label>
+    <input id="cashGiven1" type="number" min="0" value="0" style="max-width:160px">
+    <span class="badge">Vuelto: $<span id="cashChange1">0</span></span>
+  </div>
+</div>
 
-      <!-- Split payment -->
-      <div id="splitSection" style="display:none">
-        <div class="line" style="margin-top:8px;flex-wrap:wrap">
-          <label class="small" style="width:80px">Monto 1</label>
-          <input id="amount1" type="number" min="0" value="0">
-        </div>
-        <div class="line" style="margin-top:8px;flex-wrap:wrap">
-          <label class="small" style="width:80px">Pago 2</label>
-          <select id="payMethod2" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
-            <option value="debito">Débito</option>
-            <option value="credito">Crédito</option>
-            <option value="transferencia">Transferencia</option>
-            <option value="efectivo">Efectivo</option>
-          </select>
-        </div>
-        <div class="line" style="margin-top:8px;flex-wrap:wrap">
-          <label class="small" style="width:80px">Monto 2</label>
-          <input id="amount2" type="number" min="0" value="0">
-        </div>
-        <div class="line" id="cashBox2" style="display:none;flex-wrap:wrap;margin-top:6px">
-          <label class="small" style="width:100px">Paga con (2)</label>
-          <input id="cashGiven2" type="number" min="0" value="0" style="max-width:160px">
-          <span class="badge">Vuelto(2): $<span id="cashChange2">0</span></span>
-        </div>
-      </div>
+<!-- Toggle split -->
+<div class="line" style="margin-top:10px">
+  <label class="small"><input id="splitToggle" type="checkbox" style="width:auto;margin-right:6px"> Dividir pago</label>
+</div>
 
-      <hr class="sep">
+<!-- Split payment (tarjetas) -->
+<div id="splitSection" style="display:none">
+  <!-- Card Pago 1: Monto 1 -->
+  <div class="payCard" id="pay1SplitCard">
+    <div class="payHead"><div class="title">① Pago 1</div></div>
+    <div class="line" style="margin-top:8px;flex-wrap:wrap">
+      <label class="small" style="width:80px">Monto 1</label>
+      <input id="amount1" type="number" min="0" value="0">
+    </div>
+  </div>
+
+  <!-- Card Pago 2: método + monto + efectivo -->
+  <div class="payCard" id="pay2Card">
+    <div class="payHead">
+      <div class="title">② Pago 2</div>
+      <span class="methodBadge" id="methodBadge2">Método</span>
+    </div>
+
+    <div class="line" style="margin-top:8px;flex-wrap:wrap">
+      <label class="small" style="width:80px">Pago 2</label>
+      <select id="payMethod2" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
+        <option value="debito">Débito</option>
+        <option value="credito">Crédito</option>
+        <option value="transferencia">Transferencia</option>
+        <option value="efectivo">Efectivo</option>
+      </select>
+    </div>
+
+    <div class="line" style="margin-top:8px;flex-wrap:wrap">
+      <label class="small" style="width:80px">Monto 2</label>
+      <input id="amount2" type="number" min="0" value="0">
+    </div>
+
+    <!-- EFECTIVO PAGO 2 -->
+    <div class="line cashStrip" id="cashBox2" style="display:none;flex-wrap:wrap;margin-top:6px">
+      <label class="small" style="width:100px">Paga con (2)</label>
+      <input id="cashGiven2" type="number" min="0" value="0" style="max-width:160px">
+      <span class="badge">Vuelto(2): $<span id="cashChange2">0</span></span>
+    </div>
+  </div>
+</div>
+
+<hr class="sep">
 
       <div class="line" style="justify-content:flex-end;gap:8px;flex-wrap:wrap">
         <button id="reprintBtn" class="ghost" title="Reimprimir último ticket">Reimprimir</button>
@@ -893,6 +925,15 @@ function updateBodegaPanel(){
 }
 
 /* ====== Pago & vuelto ====== */
+  /* === UI: Badges de método con iconos (Punto 9) === */
+function updateMethodBadges(){
+  const map = { efectivo:'💵 Efectivo', debito:'💳 Débito', credito:'💳 Crédito', transferencia:'🔁 Transferencia' };
+  const b1 = document.getElementById('methodBadge1');
+  const b2 = document.getElementById('methodBadge2');
+  if(b1){ const m1 = document.getElementById('payMethod1').value; b1.textContent = map[m1] || 'Método'; }
+  if(b2){ const m2 = document.getElementById('payMethod2').value; b2.textContent = map[m2] || 'Método'; }
+}
+
 function updateChangeDisplays(){
   const total = computeTotals().totalCompra;
   const method1 = document.getElementById('payMethod1').value;
@@ -906,6 +947,7 @@ function updateChangeDisplays(){
     document.getElementById('cashChange1').textContent=fmt(change1);
     document.getElementById('splitSection').style.display='none';
     return;
+  updateMethodBadges();
   }
   document.getElementById('splitSection').style.display='block';
   const method2 = document.getElementById('payMethod2').value;
