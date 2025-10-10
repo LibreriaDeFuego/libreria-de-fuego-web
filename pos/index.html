@@ -333,7 +333,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
   <!-- EFECTIVO PAGO 1 -->
   <div class="line cashStrip" id="cashBox1" style="display:none;flex-wrap:wrap;margin-top:6px">
     <label class="small" style="width:100px">Paga con</label>
-    <input id="cashGiven1" type="number" min="0" value="0" style="max-width:160px">
+    <input id="cashGiven1" type="text" inputmode="numeric" value="0" style="max-width:160px" data-format="money">
     <span class="badge"><span class="vueltoXL">Vuelto: $<span id="cashChange1">0</span></span></span>
   </div>
 </div>
@@ -350,7 +350,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
     <div class="payHead"><div class="title">① Pago 1</div></div>
     <div class="line" style="margin-top:8px;flex-wrap:wrap">
       <label class="small" style="width:80px">Monto 1</label>
-      <input id="amount1" type="number" min="0" value="0">
+      <input id="amount1" type="text" inputmode="numeric" value="0" data-format="money">
     </div>
   </div>
 
@@ -373,13 +373,13 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 
     <div class="line" style="margin-top:8px;flex-wrap:wrap">
       <label class="small" style="width:80px">Monto 2</label>
-      <input id="amount2" type="number" min="0" value="0">
+      <input id="amount2" type="text" inputmode="numeric" value="0" data-format="money">
     </div>
 
     <!-- EFECTIVO PAGO 2 -->
     <div class="line cashStrip" id="cashBox2" style="display:none;flex-wrap:wrap;margin-top:6px">
       <label class="small" style="width:100px">Paga con (2)</label>
-      <input id="cashGiven2" type="number" min="0" value="0" style="max-width:160px">
+      <input id="cashGiven2" type="text" inputmode="numeric" value="0" style="max-width:160px" data-format="money">
       <span class="badge"><span class="vueltoXL">Vuelto(2): $<span id="cashChange2">0</span></span></span>
     </div>
   </div>
@@ -441,7 +441,45 @@ const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7A
 /* ====== Helpers ====== */
 const IVA=0.19; // para convertir neto->PVP si viene como neto
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
-
+const digitsOnly=v=>(v||'').toString().replace(/\D/g,'');
+function readMoney(elOrId){
+  const el=typeof elOrId==='string'?document.getElementById(elOrId):elOrId;
+  if(!el) return 0;
+  const d=digitsOnly(el.value);
+  return d?Number(d):0;
+}
+function setMoneyValue(elOrId, value){
+  const el=typeof elOrId==='string'?document.getElementById(elOrId):elOrId;
+  if(!el) return;
+  const n=Math.max(0, Math.round(Number(value)||0));
+  el.value=fmt(n);
+}
+function formatMoneyInput(el){
+  if(!el) return;
+  const d=digitsOnly(el.value);
+  if(!d){ el.value=''; return; }
+  el.value=fmt(Number(d));
+}
+function attachMoneyFormatters(){
+  document.querySelectorAll('input[data-format="money"]').forEach(el=>{
+    formatMoneyInput(el);
+    if(el.value===''){ el.value='0'; }
+    el.addEventListener('focus', ()=>{
+      if(readMoney(el)===0){ el.value=''; }
+      setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length); }catch{} },0);
+    });
+    el.addEventListener('blur', ()=>{
+      formatMoneyInput(el);
+      if(el.value===''){ el.value='0'; }
+    });
+    el.addEventListener('input', ()=>{
+      const d=digitsOnly(el.value);
+      el.value=d?fmt(Number(d)):'';
+      setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length); }catch{} },0);
+    });
+  });
+}
+  
 /* ====== Beep (solo error) ====== */
 let audioCtx=null;
 function ensureAudio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch{} } }
@@ -926,7 +964,7 @@ function updateChangeDisplays(){
   const cashBox2 = document.getElementById('cashBox2');
   cashBox1.style.display = (method1==='efectivo') ? 'flex' : 'none';
   if(!split){
-    const given1 = Number(document.getElementById('cashGiven1').value||0);
+    const given1 = readMoney('cashGiven1');
     const change1 = Math.max(0, (method1==='efectivo' ? given1 : 0) - total);
     document.getElementById('cashChange1').textContent=fmt(change1);
     document.getElementById('splitSection').style.display='none';
@@ -935,10 +973,10 @@ function updateChangeDisplays(){
   document.getElementById('splitSection').style.display='block';
   const method2 = document.getElementById('payMethod2').value;
   cashBox2.style.display = (method2==='efectivo') ? 'flex' : 'none';
-  const a1 = Math.max(0, Number(document.getElementById('amount1').value||0));
-  const a2 = Math.max(0, Number(document.getElementById('amount2').value||0));
-  const g1 = Number(document.getElementById('cashGiven1').value||0);
-  const g2 = Number(document.getElementById('cashGiven2').value||0);
+  const a1 = Math.max(0, readMoney('amount1'));
+  const a2 = Math.max(0, readMoney('amount2'));
+  const g1 = readMoney('cashGiven1');
+  const g2 = readMoney('cashGiven2');
   document.getElementById('cashChange1').textContent = fmt(method1==='efectivo' ? Math.max(0, g1 - (a1 || 0)) : 0);
   document.getElementById('cashChange2').textContent = fmt(method2==='efectivo' ? Math.max(0, g2 - (a2 || 0)) : 0);
 }
@@ -997,14 +1035,14 @@ async function cobrar(){
   let payments=[];
   const m1 = document.getElementById('payMethod1').value;
   if(!split){
-    const cash1 = Number(document.getElementById('cashGiven1').value||0);
+    const cash1 = readMoney('cashGiven1');
     payments.push({method:m1, amount:sums.totalCompra, cashGiven:(m1==='efectivo'?cash1:undefined)});
   }else{
     const m2 = document.getElementById('payMethod2').value;
-    const a1 = Math.max(0, Number(document.getElementById('amount1').value||0));
-    const a2 = Math.max(0, Number(document.getElementById('amount2').value||0));
-    const cash1 = Number(document.getElementById('cashGiven1').value||0);
-    const cash2 = Number(document.getElementById('cashGiven2').value||0);
+    const a1 = Math.max(0, readMoney('amount1'));
+    const a2 = Math.max(0, readMoney('amount2'));
+    const cash1 = readMoney('cashGiven1');
+    const cash2 = readMoney('cashGiven2');
     const sum = a1 + a2;
     if(Math.abs(sum - sums.totalCompra) > 1){
       toast('La suma de montos (pago dividido) debe ser igual al Total de compra.','err'); beepError(); return;
@@ -1074,24 +1112,14 @@ gInput.addEventListener('input', ()=>{
 // split toggle
 document.getElementById('splitToggle').addEventListener('change', ()=>{
   const total = Math.round(computeTotals().totalCompra);
-  document.getElementById('amount1').value = total;
-  document.getElementById('amount2').value = 0;
+  setMoneyValue('amount1', total);
+  setMoneyValue('amount2', 0);
   updateChangeDisplays(); saveUI();
 });
 ['payMethod1','cashGiven1','payMethod2','cashGiven2','amount1','amount2'].forEach(id=>{
   const el=document.getElementById(id);
   el?.addEventListener('input', updateChangeDisplays);
   el?.addEventListener('change', saveUI);
-});
-['cashGiven1','cashGiven2'].forEach(id=>{
-  const el = document.getElementById(id);
-  el?.addEventListener('focus', ()=>{
-    if(el.value === '0'){ el.value = ''; }      // borra el 0 al hacer click
-  });
-  el?.addEventListener('input', ()=>{
-    el.value = Math.floor(Number(el.value) || 0); // siempre enteros
-    updateChangeDisplays();
-  });
 });
   
 /* ====== Ayuda (trial) ====== */
@@ -1104,27 +1132,16 @@ document.addEventListener('keydown', e=>{ if(e.key==='?' && !e.shiftKey){ openHe
 
 // Inicial
 loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
+attachMoneyFormatters();
+updateChangeDisplays();  
 
 /* === Wire split amount auto-completion === */
 /* === Wire split amount auto-completion === */
-document.getElementById('amount1')?.addEventListener('focus', ()=>{
-  const el = document.getElementById('amount1');
-  if(el.value === '0'){ el.value = ''; }
-});
-document.getElementById('amount2')?.addEventListener('focus', ()=>{
-  const el = document.getElementById('amount2');
-  if(el.value === '0'){ el.value = ''; }
-});
-
 document.getElementById('amount1')?.addEventListener('input', ()=>{
-  const el = document.getElementById('amount1');
-  el.value = Math.floor(Number(el.value) || 0);
   lastEditedSplit='amount1';
   syncSplitFromA1();
 });
 document.getElementById('amount2')?.addEventListener('input', ()=>{
-  const el = document.getElementById('amount2');
-  el.value = Math.floor(Number(el.value) || 0);
   lastEditedSplit='amount2';
   syncSplitFromA2();
 });
@@ -1135,8 +1152,8 @@ function syncSplitFromA1(){
   const total = Math.round(computeTotals().totalCompra);
   const a1El = document.getElementById('amount1');
   const a2El = document.getElementById('amount2');
-  const a1 = Math.floor(Number(a1El.value||0));
-  a2El.value = Math.max(0, total - a1);
+  const a1 = Math.floor(readMoney(a1El));
+  setMoneyValue(a2El, Math.max(0, total - a1));
   updateChangeDisplays();
 }
 function syncSplitFromA2(){
@@ -1144,8 +1161,8 @@ function syncSplitFromA2(){
   const total = Math.round(computeTotals().totalCompra);
   const a1El = document.getElementById('amount1');
   const a2El = document.getElementById('amount2');
-  const a2 = Math.floor(Number(a2El.value||0));
-  a1El.value = Math.max(0, total - a2);
+  const a2 = Math.floor(readMoney(a2El));
+  setMoneyValue(a1El, Math.max(0, total - a2));
   updateChangeDisplays();
 }
 
