@@ -61,7 +61,8 @@ header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
 
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
 th,td{text-align:left;font-size:12px;padding:10px;border-bottom:1px dashed var(--line);vertical-align:middle}
-td input[type="number"]{padding:8px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);width:100%}
+td input[type="number"],
+td input[data-a="discValue"]{padding:8px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);width:100%}
 
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .seg button{padding:8px 10px;background:#fff;border:0;color:var(--ink);width:auto}
@@ -142,7 +143,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 #cartTable .seg[data-line] button{ flex:1 1 0; min-width:0; height:34px; padding:0; line-height:1; }
 
 /* Keep the number input compact so column fits nicely */
-#cartTable td input[type="number"][data-a="discValue"]{ max-width:90px }
+#cartTable td input[data-a="discValue"]{ max-width:90px }
 
 /* === Vertical centering for tall rows (long titles) === */
 #cartTable tbody td{ vertical-align:middle }
@@ -180,7 +181,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
   display:grid; grid-template-columns:repeat(3, 1fr); width:150px; min-width:150px; max-width:150px;
 }
 #cartTable .seg[data-line] button{ height:34px; padding:0; line-height:1; }
-#cartTable td input[type="number"][data-a="discValue"]{
+#cartTable td input[data-a="discValue"]{
   width:120px; max-width:120px;
 }
 
@@ -296,7 +297,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
           <button type="button" data-v="percent" class="active">%</button>
           <button type="button" data-v="amount">$</button>
         </div>
-        <input id="globalDiscValue" type="number" min="0" value="0" style="max-width:140px">
+        <input id="globalDiscValue" type="text" inputmode="numeric" value="0" style="max-width:140px" data-format="money">
         <input id="globalDiscType" type="hidden" value="percent">
       </div>
 
@@ -460,8 +461,10 @@ function formatMoneyInput(el){
   if(!d){ el.value=''; return; }
   el.value=fmt(Number(d));
 }
-function attachMoneyFormatters(){
-  document.querySelectorAll('input[data-format="money"]').forEach(el=>{
+function attachMoneyFormatters(root=document){
+  const scope = root instanceof Element ? root : document;
+  scope.querySelectorAll('input[data-format="money"]').forEach(el=>{
+    if(el.dataset.moneyBound==='1') return;
     formatMoneyInput(el);
     if(el.value===''){ el.value='0'; }
     el.addEventListener('focus', ()=>{
@@ -477,6 +480,7 @@ function attachMoneyFormatters(){
       el.value=d?fmt(Number(d)):'';
       setTimeout(()=>{ try{ el.setSelectionRange(el.value.length, el.value.length); }catch{} },0);
     });
+    el.dataset.moneyBound='1';
   });
 }
   
@@ -604,7 +608,7 @@ function saveUI(){
       pay2: document.getElementById('payMethod2')?.value || 'debito',
       split: document.getElementById('splitToggle').checked,
       gType: document.getElementById('globalDiscType').value,
-      gVal:  Number(document.getElementById('globalDiscValue').value||0)
+      gVal:  readMoney('globalDiscValue')
     }));
   }catch{}
 }
@@ -615,7 +619,7 @@ function loadUI(){
     const pm2 = document.getElementById('payMethod2'); if(pm2) pm2.value = u.pay2 || 'debito';
     document.getElementById('splitToggle').checked = !!u.split;
     document.getElementById('globalDiscType').value = u.gType || 'percent';
-    document.getElementById('globalDiscValue').value = Number.isFinite(u.gVal)?u.gVal:0;
+    setMoneyValue('globalDiscValue', Number.isFinite(u.gVal)?u.gVal:0);
     document.querySelectorAll('#genSeg button').forEach(b=>{
       b.classList.toggle('active', b.dataset.v===(u.gType||'percent'));
     });
@@ -647,7 +651,7 @@ function computeTotals(){
     descLineas += c.descLine;
   }
   const type = document.getElementById('globalDiscType').value;
-  const val  = Number(document.getElementById('globalDiscValue').value||0);
+  const val  = readMoney('globalDiscValue');
   let descGeneral = 0;
   if(type==='percent') descGeneral = subtotal * (val/100);
   else if(type==='amount') descGeneral = Math.min(subtotal, val);
@@ -692,11 +696,12 @@ function renderCart(){
             <button type="button" data-a="discType" data-v="amount"  class="${it.discType==='amount'?'active':''}">$</button>
             <button type="button" data-a="discNone"  class="${it.discType==='none'?'active':''}">sin</button>
           </div>
-          <input type="number" min="0" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" style="max-width:110px" />
+          <input type="text" inputmode="numeric" value="${it.discValue||0}" data-a="discValue" data-code="${it.code}" data-format="money" style="max-width:110px" />
         </div>
       </td>
       <td class="lineTotal">$${fmt(c.total)}</td>
       <td><button data-a="del" data-code="${it.code}" class="ghost">Quitar</button></td>`;
+    attachMoneyFormatters(tr);
     tb.appendChild(tr);
 
     tr.onclick = (ev)=>{
@@ -743,7 +748,7 @@ function renderCart(){
   tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
     el.oninput=()=>{
       const code=el.dataset.code; const it=cart.get(code); if(!it) return;
-      it.discValue = Math.max(0, Number(el.value||0));
+      it.discValue = Math.max(0, readMoney(el));
       if(it.discType==='none' && it.discValue>0){
         const seg = el.closest('tr').querySelector('.seg[data-line]');
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
@@ -1097,9 +1102,9 @@ genSeg.addEventListener('click',(e)=>{
 });
 // Improved global discount input: clear '0' on focus and auto-switch to $ if >100
 const gInput = document.getElementById('globalDiscValue');
-gInput.addEventListener('focus', ()=>{ if(gInput.value==='0'){ try{ gInput.select(); }catch{} gInput.value=''; } });
+gInput.addEventListener('focus', ()=>{ if(readMoney(gInput)===0){ try{ gInput.select(); }catch{} gInput.value=''; } });
 gInput.addEventListener('input', ()=>{
-  const v = Number(gInput.value||0);
+  const v = readMoney(gInput);
   if(v > 100){
     document.getElementById('globalDiscType').value = 'amount';
     genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
@@ -1135,7 +1140,7 @@ loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
 attachMoneyFormatters();
 updateChangeDisplays();  
 
-/* === Wire split amount auto-completion === */
+
 /* === Wire split amount auto-completion === */
 document.getElementById('amount1')?.addEventListener('input', ()=>{
   lastEditedSplit='amount1';
@@ -1197,7 +1202,7 @@ renderCart = function(){
   tbody.addEventListener('focusin', (e)=>{
     const el = e.target;
     if(el && el.matches('input[data-a="discValue"]')){
-      if(el.value === '0'){ try{ el.select(); }catch{} el.value = ''; }
+       if(readMoney(el) === 0){ try{ el.select(); }catch{} el.value = ''; }
     }
   });
 
@@ -1208,7 +1213,7 @@ renderCart = function(){
     const it = cart.get(code);
     if(!it) return;
 
-    const val = Number(el.value||0);
+    const val = readMoney(el);
     if(it.discType === 'none' && val > 0){
       const seg = el.closest('tr')?.querySelector('.seg[data-line]');
       if(val > 100){
