@@ -754,22 +754,53 @@ function renderCart(){
     });
   });
   // valor descuento
-  tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
-    el.oninput=()=>{
-      const code=el.dataset.code; const it=cart.get(code); if(!it) return;
-      it.discValue = Math.max(0, readMoney(el));
-      if(it.discType==='none' && it.discValue>0){
-        const seg = el.closest('tr').querySelector('.seg[data-line]');
+  // valor descuento
+tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
+  el.oninput = ()=>{
+    const code = el.dataset.code;
+    const it   = cart.get(code);
+    if(!it) return;
+
+    const val  = Math.max(0, readMoney(el));
+    it.discValue = val;
+
+    // 👉 NUEVO: aquí la magia
+    const seg = el.closest('tr')?.querySelector('.seg[data-line]');
+
+    // Si no hay tipo de descuento aún y escribe algo
+    if(it.discType === 'none' && val > 0){
+      it.discType = (val > 100) ? 'amount' : 'percent';
+      if(seg){
         seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        seg.querySelector('button[data-v="percent"]').classList.add('active');
-        it.discType='percent';
+        seg.querySelector(`button[data-v="${it.discType==='amount'?'amount':'percent'}"]`)?.classList.add('active');
       }
-      const row = el.closest('tr');
-      const c = computeLine(it);
-      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
-      updateTotalsUI();
-    };
-  });
+    }
+
+    // Si ya estaba en % y pasa de 100, forzar a $
+    if(it.discType === 'percent' && val > 100){
+      it.discType = 'amount';
+      if(seg){
+        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        seg.querySelector('button[data-v="amount"]')?.classList.add('active');
+      }
+    }
+
+    // Si vuelve a 0, quitar el descuento
+    if(val === 0){
+      it.discType = 'none';
+      if(seg){
+        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+        seg.querySelector('button[data-a="discNone"]')?.classList.add('active');
+      }
+    }
+
+    const row = el.closest('tr');
+    const c   = computeLine(it);
+    row.querySelector('.lineTotal').textContent = '$' + fmt(c.total);
+    updateTotalsUI();
+  };
+});
+
 
   updateTotalsUI();
 }
