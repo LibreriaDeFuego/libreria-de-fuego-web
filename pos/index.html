@@ -879,24 +879,6 @@ function addOrInc(code, product){
 
 /* ====== Split auto-complete helpers ====== */
 let lastEditedSplit = 'amount1';
-function syncSplitFromA1(){
-  if(!document.getElementById('splitToggle').checked) return;
-  const total = computeTotals().totalCompra;
-  const a1El = document.getElementById('amount1');
-  const a2El = document.getElementById('amount2');
-  const a1 = Math.max(0, Number(a1El.value||0));
-  a2El.value = Math.max(0, total - a1);
-  updateChangeDisplays();
-}
-function syncSplitFromA2(){
-  if(!document.getElementById('splitToggle').checked) return;
-  const total = computeTotals().totalCompra;
-  const a1El = document.getElementById('amount1');
-  const a2El = document.getElementById('amount2');
-  const a2 = Math.max(0, Number(a2El.value||0));
-  a1El.value = Math.max(0, total - a2);
-  updateChangeDisplays();
-}
 
 /* ====== Bodega panel (simple suggestions based on current cart) ====== */
 function updateBodegaPanel(){
@@ -939,6 +921,7 @@ function updateChangeDisplays(){
   const total = computeTotals().totalCompra;
   const method1 = document.getElementById('payMethod1').value;
   const split = document.getElementById('splitToggle').checked;
+  updateMethodBadges();
   const cashBox1 = document.getElementById('cashBox1');
   const cashBox2 = document.getElementById('cashBox2');
   cashBox1.style.display = (method1==='efectivo') ? 'flex' : 'none';
@@ -948,7 +931,6 @@ function updateChangeDisplays(){
     document.getElementById('cashChange1').textContent=fmt(change1);
     document.getElementById('splitSection').style.display='none';
     return;
-  updateMethodBadges();
   }
   document.getElementById('splitSection').style.display='block';
   const method2 = document.getElementById('payMethod2').value;
@@ -957,9 +939,6 @@ function updateChangeDisplays(){
   const a2 = Math.max(0, Number(document.getElementById('amount2').value||0));
   const g1 = Number(document.getElementById('cashGiven1').value||0);
   const g2 = Number(document.getElementById('cashGiven2').value||0);
-  const cashPaid = (method1==='efectivo'?g1:0) + (method2==='efectivo'?g2:0);
-  const nonCashPaid = (method1!=='efectivo'?a1:0) + (method2!=='efectivo'?a2:0);
-  const change = Math.max(0, cashPaid + nonCashPaid - total);
   document.getElementById('cashChange1').textContent = fmt(method1==='efectivo' ? Math.max(0, g1 - (a1 || 0)) : 0);
   document.getElementById('cashChange2').textContent = fmt(method2==='efectivo' ? Math.max(0, g2 - (a2 || 0)) : 0);
 }
