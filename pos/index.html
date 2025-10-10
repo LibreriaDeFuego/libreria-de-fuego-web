@@ -606,27 +606,36 @@ function saveUI(){
     localStorage.setItem('pos_ui', JSON.stringify({
       pay1: document.getElementById('payMethod1').value,
       pay2: document.getElementById('payMethod2')?.value || 'debito',
-      split: document.getElementById('splitToggle').checked,
-      gType: document.getElementById('globalDiscType').value,
-      gVal:  readMoney('globalDiscValue')
+      split: document.getElementById('splitToggle').checked
     }));
   }catch{}
 }
+  function resetGlobalDiscount({shouldUpdate=true}={}){
+  const typeEl = document.getElementById('globalDiscType');
+  const valueId = 'globalDiscValue';
+  const valueEl = document.getElementById(valueId);
+  if(!typeEl || !valueEl) return;
+  typeEl.value = 'percent';
+  setMoneyValue(valueEl, 0);
+  document.querySelectorAll('#genSeg button').forEach(b=>{
+    b.classList.toggle('active', b.dataset.v==='percent');
+  });
+  if(shouldUpdate) updateTotalsUI();
+}
 function loadUI(){
-  try{
-    const u = JSON.parse(localStorage.getItem('pos_ui')||'null'); if(!u) return;
+let u=null;
+  try{ u = JSON.parse(localStorage.getItem('pos_ui')||'null'); }
+  catch{}
+  if(u){
     document.getElementById('payMethod1').value = u.pay1 || 'efectivo';
     const pm2 = document.getElementById('payMethod2'); if(pm2) pm2.value = u.pay2 || 'debito';
     document.getElementById('splitToggle').checked = !!u.split;
-    document.getElementById('globalDiscType').value = u.gType || 'percent';
-    setMoneyValue('globalDiscValue', Number.isFinite(u.gVal)?u.gVal:0);
-    document.querySelectorAll('#genSeg button').forEach(b=>{
-      b.classList.toggle('active', b.dataset.v===(u.gType||'percent'));
-    });
     document.getElementById('splitSection').style.display = u.split ? 'block' : 'none';
-  }catch{}
 }
-
+  resetGlobalDiscount({shouldUpdate:false});
+  updateTotalsUI();
+}
+  
 /* ====== Cálculos SOBRE PVP ====== */
 function computeLine(it){
   const unit = Number(it.pricePVP||0);
@@ -1068,6 +1077,7 @@ async function cobrar(){
     lastTicketHTML = html;
     const w=window.open('','_blank','width=430,height=640'); w.document.write(html); w.document.close(); w.print();
     cart.clear(); renderCart(); focusOmni();
+    resetGlobalDiscount();
     toast(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada ✅');
   }catch(err){
     const q = getOutbox();
