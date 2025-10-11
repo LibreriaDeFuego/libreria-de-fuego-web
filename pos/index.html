@@ -33,7 +33,7 @@ header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
 /* Two-column layout */
 .grid{display:grid;gap:14px;grid-template-columns: 1.2fr .8fr}
 @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
-
+  
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(0,0,0,.04)}
 .card h2{font-size:16px}
 
@@ -352,78 +352,6 @@ th,td{ border-bottom:none } /* remove per-cell borders */
       </div>
 
       <hr class="sep">
-
-<!-- Métodos de pago (tarjetas) -->
-<div class="payCard" id="pay1Card">
-  <div class="payHead">
-    <div class="title">① Pago 1</div>
-    <span class="methodBadge" id="methodBadge1">Método</span>
-  </div>
-
-  <div class="line" style="flex-wrap:wrap">
-    <label class="small" style="width:80px">Pago 1</label>
-    <select id="payMethod1" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
-      <option value="efectivo">Efectivo</option>
-      <option value="debito">Débito</option>
-      <option value="credito">Crédito</option>
-      <option value="transferencia">Transferencia</option>
-    </select>
-  </div>
-
-  <!-- EFECTIVO PAGO 1 -->
-  <div class="line cashStrip" id="cashBox1" style="display:none;flex-wrap:wrap;margin-top:6px">
-    <label class="small" style="width:100px">Paga con</label>
-    <input id="cashGiven1" type="text" inputmode="numeric" value="0" style="max-width:160px" data-format="money">
-    <span class="badge"><span class="vueltoXL">Vuelto: $<span id="cashChange1">0</span></span></span>
-  </div>
-</div>
-
-<!-- Toggle split -->
-<div class="line" style="margin-top:10px">
-  <label class="small"><input id="splitToggle" type="checkbox" style="width:auto;margin-right:6px"> Dividir pago</label>
-</div>
-
-<!-- Split payment (tarjetas) -->
-<div id="splitSection" style="display:none">
-  <!-- Card Pago 1: Monto 1 -->
-  <div class="payCard" id="pay1SplitCard">
-    <div class="payHead"><div class="title">① Pago 1</div></div>
-    <div class="line" style="margin-top:8px;flex-wrap:wrap">
-      <label class="small" style="width:80px">Monto 1</label>
-      <input id="amount1" type="text" inputmode="numeric" value="0" data-format="money">
-    </div>
-  </div>
-
-  <!-- Card Pago 2: método + monto + efectivo -->
-  <div class="payCard" id="pay2Card">
-    <div class="payHead">
-      <div class="title">② Pago 2</div>
-      <span class="methodBadge" id="methodBadge2">Método</span>
-    </div>
-
-    <div class="line" style="margin-top:8px;flex-wrap:wrap">
-      <label class="small" style="width:80px">Pago 2</label>
-      <select id="payMethod2" style="padding:10px;border-radius:10px;border:1px solid var(--line)">
-        <option value="debito">Débito</option>
-        <option value="credito">Crédito</option>
-        <option value="transferencia">Transferencia</option>
-        <option value="efectivo">Efectivo</option>
-      </select>
-    </div>
-
-    <div class="line" style="margin-top:8px;flex-wrap:wrap">
-      <label class="small" style="width:80px">Monto 2</label>
-      <input id="amount2" type="text" inputmode="numeric" value="0" data-format="money">
-    </div>
-
-    <!-- EFECTIVO PAGO 2 -->
-    <div class="line cashStrip" id="cashBox2" style="display:none;flex-wrap:wrap;margin-top:6px">
-      <label class="small" style="width:100px">Paga con (2)</label>
-      <input id="cashGiven2" type="text" inputmode="numeric" value="0" style="max-width:160px" data-format="money">
-      <span class="badge"><span class="vueltoXL">Vuelto(2): $<span id="cashChange2">0</span></span></span>
-    </div>
-  </div>
-</div>
 
 <hr class="sep">
 
