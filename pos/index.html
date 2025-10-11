@@ -85,43 +85,47 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 .cobroCard .payBtn{width:100%;border-color:transparent}
 .cobroCard .payBtn.active{background:#ff751f;color:#fff;border-color:#ff751f}
 
-/* ======= SWITCH DE DESCUENTO (sin círculo en %) ======= */
+/* ======= NUEVO SWITCH DESCUENTO (monto + lado activo) ======= */
 #genSeg{display:inline-flex}
 .seg.pill{
-  display:flex;align-items:center;gap:10px;
-  background:#26306a;border:0;padding:6px 8px;border-radius:999px;
+  --iconW:34px;
+  --inputW:140px; /* ancho del campo */
+  --gap:8px;
+  --pad:6px;
+  position:relative;
+  display:flex;align-items:center;gap:var(--gap);
+  background:#26306a;border:0;border-radius:999px;
+  padding:var(--pad);
+  color:#cfd6ff;
 }
-/* $ a la izquierda, se “pega” al óvalo cuando está activo */
-.seg.pill .pill-icon{
-  display:inline-flex;align-items:center;justify-content:center;
-  height:34px; min-width:34px; padding:0 10px;
-  border-radius:999px;border:0; background:transparent;
-  color:#cfd6ff; font-weight:900;
-  transition:background .2s,color .2s;
+.seg.pill > *{position:relative;z-index:2} /* encima del deslizador */
+.seg.pill .switcher{
+  position:absolute;
+  top:var(--pad); bottom:var(--pad);
+  left:var(--pad);
+  width:calc(var(--iconW) + var(--gap) + var(--inputW));
+  background:#ffffff;border-radius:999px;
+  transition:transform .22s ease;
+  z-index:1;
 }
-/* Contenedor del input + % */
-.seg.pill .pill-input{position:relative;display:flex;align-items:center}
-/* Input siempre óvalo blanco */
+.seg.pill[data-state="percent"] .switcher{
+  transform:translateX(calc(var(--iconW) + var(--gap)));
+}
+.seg.pill[data-state="amount"] .switcher{
+  transform:translateX(0);
+}
+.seg.pill .pill-icon,
+.seg.pill .pill-percent{
+  width:var(--iconW);height:34px;display:inline-flex;align-items:center;justify-content:center;
+  font-weight:900;border:0;background:transparent;cursor:pointer;color:#cfd6ff;
+}
 .seg.pill .pill-input input{
-  width:120px;height:34px;border:0;background:#fff;color:#000;
-  font-weight:800;text-align:center;border-radius:999px;outline:none;
-  padding-right:28px;
+  width:var(--inputW);height:34px;border:0;background:transparent;color:#000;
+  font-weight:800;text-align:center;border-radius:999px;outline:none;padding:0 6px;
 }
-/* % sin círculo (solo texto pegado al borde derecho) */
-.seg.pill .pill-input .pill-percent{
-  position:absolute;right:10px;top:50%;transform:translateY(-50%);
-  border:0;background:transparent;padding:0;margin:0;
-  width:auto;height:auto;border-radius:0;
-  color:#cfd6ff;font-weight:900;line-height:1;cursor:pointer;
-  transition:color .2s;
-}
-/* Estados visuales de switch */
-.seg.pill.mode-percent .pill-icon{ background:transparent; color:#cfd6ff; }
-.seg.pill.mode-percent .pill-input input{ background:#fff; }
-.seg.pill.mode-percent .pill-input .pill-percent{ color:#000; }  /* % activo */
-.seg.pill.mode-amount .pill-icon{ background:#fff; color:#000; } /* $ activo */
-.seg.pill.mode-amount .pill-input input{ background:#fff; }
-.seg.pill.mode-amount .pill-input .pill-percent{ color:#cfd6ff; } /* % apagado */
+.seg.pill .pill-icon.active,
+.seg.pill .pill-percent.active{color:#1c2353}
+.seg.pill .hint{font-size:12px;opacity:.7}
 
 /* Total azul centrado con descuento abajo-derecha */
 .totalChip{
@@ -225,13 +229,17 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
       <!-- Descuento -->
       <div class="line" style="margin-top:10px;flex-wrap:wrap">
         <label class="small" style="width:100%">Descuento</label>
-        <div class="seg pill mode-percent" id="genSeg">
+
+        <!-- SWITCH visual: blanco cubre (monto + lado activo) -->
+        <div class="seg pill" id="genSeg" data-state="percent" aria-label="Selector de descuento">
+          <div class="switcher" aria-hidden="true"></div>
           <button type="button" class="pill-icon" data-v="amount" aria-label="Descuento en pesos">$</button>
           <div class="pill-input">
             <input id="globalDiscValue" type="text" inputmode="numeric" value="0" data-format="money" aria-label="Valor de descuento">
-            <button type="button" class="pill-percent" data-v="percent" aria-label="Descuento en porcentaje">%</button>
           </div>
+          <button type="button" class="pill-percent active" data-v="percent" aria-label="Descuento en porcentaje">%</button>
         </div>
+
         <input id="globalDiscType" type="hidden" value="percent">
       </div>
 
@@ -319,7 +327,6 @@ const IVA=0.19;
 /* ===== Helpers dinero ===== */
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
 const digitsOnly=v=>(v||'').toString().replace(/\D/g,'');
-
 function readMoney(elOrId){const el=typeof elOrId==='string'?document.getElementById(elOrId):elOrId;if(!el) return 0;const d=digitsOnly(el.value);return d?Number(d):0;}
 function setMoneyValue(elOrId,value){const el=typeof elOrId==='string'?document.getElementById(elOrId):elOrId;if(!el)return;const n=Math.max(0,Math.round(Number(value)||0));el.value=fmt(n);}
 function formatMoneyInput(el){if(!el)return;const d=digitsOnly(el.value);el.value=d?fmt(Number(d)):'';}
@@ -366,6 +373,7 @@ async function cloudGetProducts(){
     }catch(e){ lastErr=e; }
   }
   if(!data) throw lastErr||new Error('No se pudo listar productos');
+
   return data.map(p=>({
     code : String(p.code ?? p.Codigo ?? p.codigo ?? p.barcode ?? p.ean ?? ''),
     title: String(p.title ?? p.Titulo ?? p.titulo ?? 'Sin título'),
@@ -375,6 +383,7 @@ async function cloudGetProducts(){
     stock: Number(p.stock ?? p.Stock ?? 0)
   })).filter(p=>p.code);
 }
+
 async function loadProductsCached(){
   try{
     if(productCache && (Date.now()-productCache.ts)<CACHE_TTL_MS) return productCache.arr;
@@ -388,6 +397,7 @@ async function loadProductsCached(){
 }
 
 /* ===== Estado POS ===== */
+const IVA_RATE=0.19;
 const cart=new Map();
 let selectedCode=null, lastTicketHTML='', lastScan={code:'',at:0};
 
@@ -476,7 +486,7 @@ function renderCart(){
   // cambio de tipo de descuento por línea
   tb.querySelectorAll('.seg[data-line]').forEach(seg=>{
     seg.addEventListener('click',(e)=>{
-      if(e.target.tagName!=='BUTTON')return;
+      if(e.target.tagName!=='BUTTON') return;
       const code=seg.dataset.line;
       const it=cart.get(code); if(!it) return;
       const act=e.target.dataset.a;
@@ -484,13 +494,13 @@ function renderCart(){
       e.target.classList.add('active');
       if(act==='discType'){
         it.discType=e.target.dataset.v;
-        if(!it.discValue) it.discValue=(it.discType==='percent'?1:100);
+        if(!it.discValue) it.discValue = (it.discType==='percent'?1:100);
       }else if(act==='discNone'){
         it.discType='none'; it.discValue=0;
       }
       const row=seg.closest('tr');
       const c=computeLine(it);
-      row.querySelector('.lineTotal').textContent='$'+fmt(c.total);
+      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       updateTotalsUI();
     });
   });
@@ -499,11 +509,11 @@ function renderCart(){
     el.oninput=()=>{
       const code=el.dataset.code;
       const it=cart.get(code); if(!it) return;
-      const val=Math.max(0,readMoney(el));
-      it.discValue=val;
+      const val=Math.max(0, readMoney(el));
+      it.discValue = val;
       const seg=el.closest('tr')?.querySelector('.seg[data-line]');
       if(it.discType==='none' && val>0){
-        it.discType=(val>100)?'amount':'percent';
+        it.discType = (val>100) ? 'amount' : 'percent';
         if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.remove('active')); seg.querySelector(`button[data-v="${it.discType==='amount'?'amount':'percent'}"]`)?.classList.add('active'); }
       }
       if(it.discType==='percent' && val>100){
@@ -515,7 +525,7 @@ function renderCart(){
         if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.remove('active')); seg.querySelector('button[data-a="discNone"]')?.classList.add('active'); }
       }
       const row=el.closest('tr'); const c=computeLine(it);
-      row.querySelector('.lineTotal').textContent='$'+fmt(c.total);
+      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
       updateTotalsUI();
     };
   });
@@ -626,8 +636,6 @@ async function doSearch(q){
     renderSuggestions(sorted);
   },160);
 }
-const omni=document.getElementById('omniInput');
-const results=document.getElementById('searchResults');
 omni.addEventListener('keydown',(e)=>{
   if(e.key==='Enter'){
     e.preventDefault();
@@ -645,7 +653,7 @@ omni.addEventListener('input', ()=>{
   const q=omni.value.trim();
   if(q.length<1){ hideSuggestions(); return; }
   const d=q.replace(/[^\d]/g,'');
-  if(d.length>=8 && d.length<=13){ return; } // probablemente código de barras
+  if(d.length>=8 && d.length<=13){ return; }
   doSearch(q);
 });
 document.addEventListener('click',(e)=>{ if(!results.contains(e.target) && e.target!==omni){ hideSuggestions(); } });
@@ -671,14 +679,14 @@ function addOrInc(code, product){
   renderCart();
 }
 
-/* ===== Outbox simplificado ===== */
+/* ===== Outbox ===== */
 function getOutbox(){ try{ return JSON.parse(localStorage.getItem('pos_outbox')||'[]'); }catch{ return []; } }
 function setOutbox(a){ try{ localStorage.setItem('pos_outbox', JSON.stringify(a)); }catch{} }
 function updateOutboxUI(){ document.getElementById('retryOutboxBtn').style.display = getOutbox().length>0 ? 'inline-flex' : 'none'; }
 async function processOutbox(){ const q=getOutbox(); if(q.length===0) return; const rest=[]; for(const s of q){ try{ await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});}catch{rest.push(s);} } setOutbox(rest); updateOutboxUI(); }
 setInterval(processOutbox,30000);
 
-/* ===== Cobrar ===== */
+/* ===== Cobro ===== */
 async function cobrar(){
   if(cart.size===0){ toast('Carrito vacío','err'); beepError(); focusOmni(); return; }
   const sums=computeTotals();
@@ -704,49 +712,53 @@ async function cobrar(){
 
 /* ===== Persistencia UI ===== */
 function saveUI(){ try{ localStorage.setItem('pos_ui', JSON.stringify({split: document.getElementById('splitToggle')?.checked || false})); }catch{} }
-function resetGlobalDiscount({shouldUpdate=true}={}){ 
-  const typeEl=document.getElementById('globalDiscType'); 
-  const valueEl=document.getElementById('globalDiscValue'); 
-  if(!typeEl||!valueEl) return; 
-  typeEl.value='percent'; 
-  setMoneyValue(valueEl,0); 
-  setDiscountModeClass();      // mantener el switch visual
-  if(shouldUpdate) updateTotalsUI(); 
+function resetGlobalDiscount({shouldUpdate=true}={}){
+  const typeEl=document.getElementById('globalDiscType');
+  const valueEl=document.getElementById('globalDiscValue');
+  if(!typeEl||!valueEl) return;
+  typeEl.value='percent';
+  setMoneyValue(valueEl,0);
+  // Estado visual inicial: %
+  const seg=document.getElementById('genSeg');
+  seg.dataset.state='percent';
+  seg.querySelector('.pill-icon')?.classList.remove('active');
+  seg.querySelector('.pill-percent')?.classList.add('active');
+  if(shouldUpdate) updateTotalsUI();
+}
+function loadUI(){
+  let u=null; try{u=JSON.parse(localStorage.getItem('pos_ui')||'null');}catch{}
+  const splitToggleEl=document.getElementById('splitToggle');
+  if(splitToggleEl&&u){ splitToggleEl.checked=!!u.split; }
+  resetGlobalDiscount({shouldUpdate:false});
+  updateTotalsUI();
 }
 
-/* ===== Switch visual del descuento ===== */
-function setDiscountModeClass(){
-  const seg = document.getElementById('genSeg');
-  const mode = document.getElementById('globalDiscType').value;
-  seg.classList.toggle('mode-amount', mode === 'amount');
-  seg.classList.toggle('mode-percent', mode !== 'amount'); // percent por defecto
+/* ===== Descuento global — lógica + UI del switch ===== */
+function syncPillVisual(){
+  const seg=document.getElementById('genSeg');
+  const type=document.getElementById('globalDiscType').value;
+  seg.dataset.state = (type==='amount')?'amount':'percent';
+  seg.querySelector('.pill-icon')?.classList.toggle('active', type==='amount');
+  seg.querySelector('.pill-percent')?.classList.toggle('active', type==='percent');
 }
-
-/* ===== Descuento global — UI y auto %/$ ===== */
 const genSeg=document.getElementById('genSeg');
 genSeg.addEventListener('click',(e)=>{
   if(e.target.tagName!=='BUTTON') return;
-  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  const v=e.target.dataset.v;
+  const v=e.target.dataset.v; // 'amount' o 'percent'
   document.getElementById('globalDiscType').value=v;
-  setDiscountModeClass();      // <<— actualiza el switch visual
+  syncPillVisual();
   updateTotalsUI();
 });
 const gInput=document.getElementById('globalDiscValue');
-gInput.addEventListener('focus',()=>{if(readMoney(gInput)===0){try{gInput.select();}catch{}gInput.value='';}});
+gInput.addEventListener('focus',()=>{ if(readMoney(gInput)===0){ try{gInput.select();}catch{} gInput.value=''; } });
 gInput.addEventListener('input',()=>{
   const v=readMoney(gInput);
   if(v>100){
     document.getElementById('globalDiscType').value='amount';
-    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    genSeg.querySelector('button[data-v="amount"]')?.classList.add('active');
   }else{
     document.getElementById('globalDiscType').value='percent';
-    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    genSeg.querySelector('button[data-v="percent"]')?.classList.add('active');
   }
-  setDiscountModeClass();      // <<— actualiza el switch visual
+  syncPillVisual();
   updateTotalsUI();
 });
 
@@ -759,7 +771,7 @@ document.getElementById('retryOutboxBtn')?.addEventListener('click', processOutb
 
 /* ===== Init ===== */
 function focusOmni(){ const el=document.getElementById('omniInput'); el?.focus(); el?.select?.(); }
-loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox(); attachMoneyFormatters(); setDiscountModeClass();
+loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox(); attachMoneyFormatters();
 </script>
 </body>
 </html>
