@@ -312,13 +312,12 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 
   <hr class="sep">
 
-  <label class="small">Método de pago</label>
-  <div class="line" style="flex-wrap:wrap;gap:6px">
-    <button class="payBtn" data-method="debito">DÉBITO</button>
-    <button class="payBtn" data-method="credito">CRÉDITO</button>
-    <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
-    <button class="payBtn" data-method="efectivo">EFECTIVO</button>
-  </div>
+<div class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
+  <button class="payBtn" data-method="debito">DÉBITO</button>
+  <button class="payBtn" data-method="credito">CRÉDITO</button>
+  <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
+  <button class="payBtn" data-method="efectivo">EFECTIVO</button>
+</div>
 
   <div id="efectivoBox" style="display:none;margin-top:10px">
     <label class="small">PAGA CON</label>
