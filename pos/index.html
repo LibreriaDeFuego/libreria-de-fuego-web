@@ -288,6 +288,68 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 
     <!-- RIGHT: cobro -->
     <div class="card cobroCard">
+      /* === Estilos nuevos para la caja COBRO === */
+.cobroCard {
+  background-color: #1c2353 !important;  /* azul oscuro */
+  color: #fff !important;                /* texto blanco */
+  border: none !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.cobroCard .small, 
+.cobroCard label, 
+.cobroCard h2 {
+  color: #fff !important;
+}
+
+.cobroCard button {
+  color: #1c2353;
+  font-weight: 700;
+}
+
+/* Estilo para el switch de Pago Dividido */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #537BFF; /* azul activo */
+}
+
+.toggle-switch input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
   <div style="display:flex;align-items:center;justify-content:space-between">
     <h2>💳 COBRO</h2>
     <button id="menuCobro" style="background:none;border:none;font-size:20px;cursor:pointer">⋮</button>
@@ -328,10 +390,14 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 
   <hr class="sep">
 
-  <div class="line" style="align-items:center;justify-content:space-between">
-    <label class="small">Pago dividido</label>
-    <input type="checkbox" id="splitToggle" style="transform:scale(1.4)">
-  </div>
+ <div class="line" style="align-items:center;justify-content:space-between">
+  <label class="small">Pago dividido</label>
+  <label class="toggle-switch">
+    <input type="checkbox" id="splitToggle">
+    <span class="slider"></span>
+  </label>
+</div>
+
   <div id="splitBar" style="height:6px;width:100%;border-radius:10px;background:linear-gradient(to right,#537BFF 100%,#FF70D7 0%)"></div>
 
   <hr class="sep">
