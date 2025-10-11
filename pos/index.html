@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Caja (POS) — Librería de Fuego — Papel & Tinta</title>
+
 <style>
 :root{
   /* 🎉 Fiesta Vibrante */
@@ -33,11 +34,10 @@ header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
 /* Two-column layout */
 .grid{display:grid;gap:14px;grid-template-columns: 1.2fr .8fr}
 @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
-  
+
 .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:0 6px 20px rgba(0,0,0,.04)}
 .card h2{font-size:16px}
 
-/* Left column blocks */
 .omniWrap{position:relative}
 .omniWrap input{width:100%;padding:14px 12px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:16px}
 .suggestBox{
@@ -45,7 +45,7 @@ header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
   max-height:360px;overflow:auto;z-index:9999;box-shadow:0 10px 24px rgba(0,0,0,.08)
 }
 .suggestItem{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px;border-radius:10px;cursor:pointer}
-.suggestItem:hover,.suggestItem.active{background:#FFF1D7} /* durazno suave */
+.suggestItem:hover,.suggestItem.active{background:#FFF1D7}
 .left{display:flex;align-items:center;gap:10px;min-width:0}
 .cover{width:42px;height:60px;border-radius:10px;object-fit:cover;background:#EEE;border:1px solid #E8E1D9;flex:0 0 auto}
 .no-cover{width:42px;height:60px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:#EEE;color:#777;font-weight:700}
@@ -61,17 +61,16 @@ header .brand{font-size:20px;font-weight:800;letter-spacing:.2px}
 
 table{width:100%;border-collapse:separate;border-spacing:0 8px}
 th,td{text-align:left;font-size:12px;padding:10px;border-bottom:1px dashed var(--line);vertical-align:middle}
-td input[type="number"],
-td input[data-a="discValue"]{padding:8px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);width:100%}
+td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);width:100%}
 
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.seg button{padding:8px 10px;background:#fff;border:0;color:var(--ink);width:auto}
+.seg button{padding:8px 10px;background:#fff;border:0;color:var(--ink)}
 .seg button + button{border-left:1px solid var(--line)}
-.seg button.active{background:#FFE3BD} /* durazno pastel */
+.seg button.active{background:#FFE3BD}
 
 .row-selected{background:#FFF4EE}
 
-/* Right column: Cobro */
+/* Right column helpers */
 .totalBlock{display:flex;flex-direction:column;gap:8px}
 .totalDisplay{font-size:22px;font-weight:800;color:var(--ink)}
 .badges{display:flex;gap:8px;flex-wrap:wrap}
@@ -90,7 +89,7 @@ td input[data-a="discValue"]{padding:8px;border-radius:10px;border:1px solid var
 .toast{background:#FFFFFF;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:10px;font-size:14px;box-shadow:0 10px 20px rgba(0,0,0,.08)}
 .toast.err{border-color:#E7B2A3;background:#FFF4EE;color:#7E2E17}
 
-/* Modal (confirm + ayuda) */
+/* Modal */
 .modalScrim{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:9600}
 .modal{background:#fff;border:1px solid var(--line);border-radius:14px;max-width:520px;width:92%;padding:16px;box-shadow:0 20px 40px rgba(0,0,0,.12)}
 .modal h3{margin:0 0 6px;font-size:18px}
@@ -100,60 +99,23 @@ td input[data-a="discValue"]{padding:8px;border-radius:10px;border:1px solid var
 kbd{background:#FFF1E9;border:1px solid #EEC8B3;border-radius:6px;padding:2px 6px;font-size:12px}
 hr.sep{border:none;border-top:1px dashed var(--line);margin:10px 0}
 
-/* --- Nav links & layout --- */
+/* Nav & layout */
 .topbar .leftBar{ display:flex; align-items:center; gap:12px; flex-wrap:wrap }
 .navLinks{ display:flex; gap:8px; flex-wrap:wrap }
 .navLinks a{ padding:6px 10px; border:1px solid var(--line); border-radius:10px; font-size:13px; color:var(--ink); background:#fff }
 .navLinks a:hover{ background:#FFF4EE }
 
-/* --- Equal width segmented buttons (% / $ / sin) --- */
-.seg button{ display:inline-flex; align-items:center; justify-content:center; min-width:40px; height:34px; padding:0 10px; line-height:1; }
-
-/* --- Row separator aligned across the entire row --- */
-table{ width:100%; border-collapse:separate; border-spacing:0 8px }
-th,td{ border-bottom:none } /* remove per-cell borders */
-#cartTable thead th{ border-bottom:1px dashed var(--line) } /* keep header underline */
-#cartTable tbody tr{ position:relative }
-#cartTable tbody tr::after{
-  content:""; position:absolute; left:0; right:0; bottom:-4px;
-  border-top:1px dashed var(--line);
-}
-
-/* --- Bodega panel list --- */
-.bodegaList{ display:flex; flex-direction:column; gap:8px; }
-.bodegaList .bitem{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px; border:1px dashed var(--line); border-radius:10px; background:#fff }
-.bodegaList .bitem .t{ font-weight:600 }
-
-
-/* === Ensure Cobro card is sticky on the right === */
-.stickySide{ position:sticky; top:12px; align-self:start; max-height:calc(100vh - 24px); overflow:auto }
-@media (max-width: 980px){
-  .cobroCard{ order:-1; position:sticky; top:10px; z-index:10 }
-}
-/* Keep bottom stickyBar hidden to avoid duplication */
-.stickyBar{ display:none }
-
-/* --- Equal halves only for global discount segmented control --- */
-#genSeg{ display:inline-flex; width:110px; } /* fixed comfortable width for two equal halves */
+#genSeg{ display:inline-flex; width:110px; }
 #genSeg button{ flex:1 1 0; min-width:0; height:36px; padding:0; line-height:1; }
 
-
-/* === Per-line discount segmented control (Detalle de venta) === */
 #cartTable .seg[data-line]{ display:flex; flex:0 0 120px; max-width:120px }
 #cartTable .seg[data-line] button{ flex:1 1 0; min-width:0; height:34px; padding:0; line-height:1; }
-
-/* Keep the number input compact so column fits nicely */
 #cartTable td input[data-a="discValue"]{ max-width:90px }
 
-/* === Vertical centering for tall rows (long titles) === */
 #cartTable tbody td{ vertical-align:middle }
-#cartTable tbody td .line{ align-items:center }  /* center flex children vertically */
-
-/* Optional: ensure +/- controls are consistent */
+#cartTable tbody td .line{ align-items:center }
 #cartTable tbody td .line button.ghost{ height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px }
 
-
-/* === Collapsible left sidebar (icons -> labels on hover) === */
 .sideDock{
   position:fixed; left:0; top:0; bottom:0; width:56px; background:#FFFFFF;
   border-right:1px solid var(--line); z-index:9100; padding:10px 6px; display:flex;
@@ -161,62 +123,43 @@ th,td{ border-bottom:none } /* remove per-cell borders */
   box-shadow:0 10px 24px rgba(0,0,0,.04);
 }
 .sideDock:hover{ width:200px }
-.sideDock .dockItem{
-  display:flex; align-items:center; gap:12px; padding:10px; border-radius:12px; color:var(--ink);
-  border:1px solid transparent; text-decoration:none; white-space:nowrap;
-}
+.sideDock .dockItem{ display:flex; align-items:center; gap:12px; padding:10px; border-radius:12px; color:var(--ink); border:1px solid transparent; text-decoration:none; white-space:nowrap; }
 .sideDock .dockItem:hover{ background:#FFF4EE; border-color:#EEC8B3 }
 .sideDock .ico{ font-size:18px; width:24px; text-align:center }
 .sideDock .lbl{ opacity:0; transition:opacity .16s; }
 .sideDock:hover .lbl{ opacity:1 }
-
-/* Push main container to the right so sidebar doesn't overlap */
 .container{ margin-left:72px }
-
-/* Hide old header nav links */
 .navLinks{ display:none !important }
 
-/* === Per-line discount segment equal thirds + wider input === */
-#cartTable .seg[data-line]{
-  display:grid; grid-template-columns:repeat(3, 1fr); width:150px; min-width:150px; max-width:150px;
+/* === Estilos nuevos para la caja COBRO === */
+.cobroCard{
+  background:#1c2353 !important;
+  color:#fff !important;
+  border:none !important;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);
 }
-#cartTable .seg[data-line] button{ height:34px; padding:0; line-height:1; }
-#cartTable td input[data-a="discValue"]{
-  width:120px; max-width:120px;
-}
+.cobroCard .small, .cobroCard label, .cobroCard h2{ color:#fff !important; }
+.cobroCard .seg button{ background:#fff; color:#1c2353; }
+.cobroCard .seg button.active{ background:#93A2FF; color:#fff; }
 
-/* === Vertical centering for 'Cantidad' cells and row content === */
-#cartTable tbody td{ vertical-align:middle }
-#cartTable tbody td.line{ display:flex; align-items:center }
+/* Botones de método en columna */
+.cobroCard .payBtn{ width:100%; }
 
+/* Switch Pago dividido */
+.toggle-switch{ position:relative; display:inline-block; width:48px; height:24px; }
+.toggle-switch input{ opacity:0; width:0; height:0; }
+.slider{ position:absolute; inset:0; background:#ccc; border-radius:34px; transition:.3s; cursor:pointer; }
+.slider:before{ content:""; position:absolute; left:3px; bottom:3px; width:18px; height:18px; background:#fff; border-radius:50%; transition:.3s; }
+.toggle-switch input:checked + .slider{ background:#537BFF; }
+.toggle-switch input:checked + .slider:before{ transform:translateX(24px); }
 
-/* === FIX: Vertical centering for 'Cantidad' column even with tall rows === */
-#cartTable tbody td.line{
-  display:table-cell !important; /* revert from flex to table-cell for equal row height */
-  vertical-align:middle !important;
-  text-align:center;
-  white-space:nowrap;
-}
-#cartTable tbody td.line span{ display:inline-block; margin:0 8px; }
-#cartTable tbody td.line button.ghost{
-  height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:999px;
-}
-
-/* Ensure discount value input never collapses */
-#cartTable td input[type="number"][data-a="discValue"]{ width:120px; min-width:120px; max-width:140px }
-
- /* === UI: Pay cards & cash strip (Puntos 1,4,5,6,9) === */
-.payCard{border:1px solid var(--line);border-radius:16px;background:#fff;padding:12px;box-shadow:0 6px 16px rgba(0,0,0,.03);margin-top:8px}
-.payHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.payHead .title{font-weight:800}
-.cashStrip{background:#FFF8E5;border:1px dashed var(--line);border-radius:12px;padding:10px}
-.methodBadge{background:#FFF4CC;border:1px solid #FFDCA3;color:#7A3E00;border-radius:999px;padding:6px 10px;font-size:12px}
- 
+/* Barra split */
+#splitBar{ height:6px;width:100%;border-radius:10px;background:linear-gradient(to right,#537BFF 100%,#FF70D7 0%) }
 </style>
 </head>
 <body>
 
-<!-- Collapsible icon sidebar -->
+<!-- Sidebar -->
 <aside class="sideDock" aria-label="Navegación principal">
   <a href="inventario.html" class="dockItem" title="Inventario"><span class="ico">📚</span><span class="lbl">Inventario</span></a>
   <a href="reportes.html" class="dockItem" title="Reportes"><span class="ico">📊</span><span class="lbl">Reportes</span></a>
@@ -237,9 +180,10 @@ th,td{ border-bottom:none } /* remove per-cell borders */
   </header>
 
   <section class="grid">
-    <!-- LEFT: productos & carrito -->
+    <!-- LEFT -->
     <div class="card">
       <h2>Detalle de venta</h2>
+
       <div class="omniWrap" style="margin-top:8px">
         <input id="omniInput" placeholder="Escanea o escribe título, autor o código" autocomplete="off" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false" aria-haspopup="listbox">
         <div id="searchResults" class="suggestBox" role="listbox" hidden></div>
@@ -273,139 +217,80 @@ th,td{ border-bottom:none } /* remove per-cell borders */
         <button id="retryOutboxBtn" class="ghost" style="display:none" title="Reenviar ventas pendientes">Reintentar pendientes</button>
         <button id="clearBtn" class="ghost">Vaciar</button>
       </div>
-    
-    <!-- LEFT: sugerencias de bodega -->
-    <div class="card" id="bodegaPanel">
-      <h2>🏷️ Bodega (reposiciones sugeridas)</h2>
-      <p class="small">Cuando vendas, aquí verás lo que conviene traer desde bodega.</p>
-      <div id="bodegaList" class="bodegaList">Sin sugerencias por ahora</div>
-      <div class="line" style="justify-content:flex-end;margin-top:8px">
-        <a class="ghost" href="bodega.html" title="Abrir página de Bodega">Abrir página de Bodega →</a>
+
+      <div class="card" id="bodegaPanel" style="margin-top:12px">
+        <h2>🏷️ Bodega (reposiciones sugeridas)</h2>
+        <p class="small">Cuando vendas, aquí verás lo que conviene traer desde bodega.</p>
+        <div id="bodegaList" class="bodegaList">Sin sugerencias por ahora</div>
+        <div class="line" style="justify-content:flex-end;margin-top:8px">
+          <a class="ghost" href="bodega.html" title="Abrir página de Bodega">Abrir página de Bodega →</a>
+        </div>
       </div>
     </div>
 
-</div>
-
-    <!-- RIGHT: cobro -->
+    <!-- RIGHT: COBRO -->
     <div class="card cobroCard">
-      /* === Estilos nuevos para la caja COBRO === */
-.cobroCard {
-  background-color: #1c2353 !important;  /* azul oscuro */
-  color: #fff !important;                /* texto blanco */
-  border: none !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
-}
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <h2>💳 COBRO</h2>
+        <button id="menuCobro" style="background:none;border:none;font-size:20px;cursor:pointer;color:#fff">⋮</button>
+      </div>
 
-.cobroCard .small, 
-.cobroCard label, 
-.cobroCard h2 {
-  color: #fff !important;
-}
+      <!-- Descuento general -->
+      <div class="line" style="margin-top:10px;flex-wrap:wrap">
+        <label class="small" style="width:100%">Descuento</label>
+        <div class="seg" id="genSeg">
+          <button type="button" data-v="amount">$</button>
+          <input id="globalDiscValue" type="text" inputmode="numeric" value="0"
+            style="width:80px;text-align:center;border:0;background:#fff;color:#000;font-weight:700" data-format="money">
+          <button type="button" data-v="percent">%</button>
+        </div>
+        <input id="globalDiscType" type="hidden" value="percent">
+      </div>
 
-.cobroCard button {
-  color: #1c2353;
-  font-weight: 700;
-}
+      <!-- Total -->
+      <div class="line" style="margin-top:16px;justify-content:center">
+        <div style="background:#537BFF;color:#fff;padding:12px 20px;border-radius:16px;text-align:center;font-size:22px;font-weight:800">
+          Total <br> $<span id="grandTotal">0</span>
+        </div>
+      </div>
 
-/* Estilo para el switch de Pago Dividido */
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 48px;
-  height: 24px;
-}
+      <hr class="sep">
 
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+      <!-- Métodos en columna -->
+      <label class="small">Método de pago</label>
+      <div class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
+        <button class="payBtn" data-method="debito">DÉBITO</button>
+        <button class="payBtn" data-method="credito">CRÉDITO</button>
+        <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
+        <button class="payBtn" data-method="efectivo">EFECTIVO</button>
+      </div>
 
-.slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
-  background-color: #ccc;
-  transition: 0.3s;
-  border-radius: 34px;
-}
+      <!-- Efectivo: Paga con / Vuelto -->
+      <div id="efectivoBox" style="display:none;margin-top:10px">
+        <label class="small">PAGA CON</label>
+        <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" style="max-width:140px">
+        <label class="small" style="margin-top:6px">VUELTO</label>
+        <div style="font-size:20px;font-weight:700" id="vueltoDisplay">$0</div>
+      </div>
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.3s;
-}
+      <hr class="sep">
 
-.toggle-switch input:checked + .slider {
-  background-color: #537BFF; /* azul activo */
-}
+      <!-- Pago dividido con switch -->
+      <div class="line" style="align-items:center;justify-content:space-between">
+        <label class="small">Pago dividido</label>
+        <label class="toggle-switch">
+          <input type="checkbox" id="splitToggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div id="splitBar"></div>
 
-.toggle-switch input:checked + .slider:before {
-  transform: translateX(24px);
-}
+      <hr class="sep">
 
-  <div style="display:flex;align-items:center;justify-content:space-between">
-    <h2>💳 COBRO</h2>
-    <button id="menuCobro" style="background:none;border:none;font-size:20px;cursor:pointer">⋮</button>
-  </div>
-
-  <div class="line" style="margin-top:10px;flex-wrap:wrap">
-    <label class="small" style="width:100%">Descuento</label>
-    <div class="seg" id="genSeg">
-      <button type="button" data-v="amount">$</button>
-      <input id="globalDiscValue" type="text" inputmode="numeric" value="0"
-        style="width:80px;text-align:center;border:0;background:#fff;color:#000;font-weight:700" data-format="money">
-      <button type="button" data-v="percent">%</button>
+      <button id="saveCartBtn" class="ghost" style="width:100%">Guardar carro</button>
     </div>
-    <input id="globalDiscType" type="hidden" value="percent">
-  </div>
-
-  <div class="line" style="margin-top:16px;justify-content:center">
-    <div style="background:#537BFF;color:#fff;padding:12px 20px;border-radius:16px;text-align:center;font-size:22px;font-weight:800">
-      Total <br> $<span id="grandTotal">0</span>
-    </div>
-  </div>
-
-  <hr class="sep">
-
-<div class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
-  <button class="payBtn" data-method="debito">DÉBITO</button>
-  <button class="payBtn" data-method="credito">CRÉDITO</button>
-  <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
-  <button class="payBtn" data-method="efectivo">EFECTIVO</button>
+  </section>
 </div>
-
-  <div id="efectivoBox" style="display:none;margin-top:10px">
-    <label class="small">PAGA CON</label>
-    <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" style="max-width:140px">
-    <label class="small" style="margin-top:6px">VUELTO</label>
-    <div style="font-size:20px;font-weight:700" id="vueltoDisplay">$0</div>
-  </div>
-
-  <hr class="sep">
-
- <div class="line" style="align-items:center;justify-content:space-between">
-  <label class="small">Pago dividido</label>
-  <label class="toggle-switch">
-    <input type="checkbox" id="splitToggle">
-    <span class="slider"></span>
-  </label>
-</div>
-
-  <div id="splitBar" style="height:6px;width:100%;border-radius:10px;background:linear-gradient(to right,#537BFF 100%,#FF70D7 0%)"></div>
-
-  <hr class="sep">
-
-  <button id="saveCartBtn" class="ghost" style="width:100%">Guardar carro</button>
-</div>
-
-      <hr class="sep
 
 <!-- Sticky total bar -->
 <div class="stickyBar" id="stickyBar" aria-live="polite">
@@ -431,7 +316,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
   </div>
 </div>
 
-<!-- Help modal (trial) -->
+<!-- Help modal -->
 <div class="modalScrim" id="helpScrim" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
   <div class="modal">
     <h3 id="helpTitle">Ayuda rápida</h3>
@@ -451,7 +336,7 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 const API_URL = "https://script.google.com/macros/s/AKfycbz700j5bneZF5-RiJm8lA7Af1vvXcnkwQnrjYbch3hqEuhMUwtgaBpvIztLwR72bakk/exec";
 
 /* ====== Helpers ====== */
-const IVA=0.19; // para convertir neto->PVP si viene como neto
+const IVA=0.19;
 const fmt=n=>new Intl.NumberFormat('es-CL').format(Math.round(n||0));
 const digitsOnly=v=>(v||'').toString().replace(/\D/g,'');
 function readMoney(elOrId){
@@ -494,8 +379,8 @@ function attachMoneyFormatters(root=document){
     el.dataset.moneyBound='1';
   });
 }
-  
-/* ====== Beep (solo error) ====== */
+
+/* ====== Beep error ====== */
 let audioCtx=null;
 function ensureAudio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch{} } }
 function beepError(){
@@ -555,7 +440,7 @@ async function apiPost(action,payload){
   return r.json();
 }
 
-/* ====== Cache productos ====== */
+/* ====== Productos (cache) ====== */
 const CACHE_TTL_MS = 10*60*1000;
 let productCache = null;
 (function initCache(){
@@ -575,8 +460,6 @@ async function loadProductsCached(){
     toast('No se pudo cargar productos (LIST_PRODUCTS).','err'); beepError(); throw err;
   }
 }
-
-/* ====== Normalización campos nube ====== */
 function getAuthorField(p){
   let a = p.author ?? p.autor ?? p.autores ?? p.Author ?? p.Autor ?? p.authors ?? p.writer ?? p.creador ?? p.creators ?? '';
   if(Array.isArray(a)) a = a.map(x => (x?.name||x)).join(', ');
@@ -615,13 +498,11 @@ function focusOmni(){ const el=document.getElementById('omniInput'); el?.focus()
 function saveUI(){
   try{
     localStorage.setItem('pos_ui', JSON.stringify({
-      pay1: document.getElementById('payMethod1').value,
-      pay2: document.getElementById('payMethod2')?.value || 'debito',
-      split: document.getElementById('splitToggle').checked
+      split: document.getElementById('splitToggle')?.checked || false
     }));
   }catch{}
 }
-  function resetGlobalDiscount({shouldUpdate=true}={}){
+function resetGlobalDiscount({shouldUpdate=true}={}){
   const typeEl = document.getElementById('globalDiscType');
   const valueId = 'globalDiscValue';
   const valueEl = document.getElementById(valueId);
@@ -634,19 +515,15 @@ function saveUI(){
   if(shouldUpdate) updateTotalsUI();
 }
 function loadUI(){
-let u=null;
-  try{ u = JSON.parse(localStorage.getItem('pos_ui')||'null'); }
-  catch{}
-  if(u){
-    document.getElementById('payMethod1').value = u.pay1 || 'efectivo';
-    const pm2 = document.getElementById('payMethod2'); if(pm2) pm2.value = u.pay2 || 'debito';
-    document.getElementById('splitToggle').checked = !!u.split;
-    document.getElementById('splitSection').style.display = u.split ? 'block' : 'none';
-}
+  let u=null;
+  try{ u = JSON.parse(localStorage.getItem('pos_ui')||'null'); }catch{}
+  // Sólo toca lo que existe (evita errores por elementos antiguos)
+  const splitToggleEl = document.getElementById('splitToggle');
+  if(splitToggleEl && u){ splitToggleEl.checked = !!u.split; }
   resetGlobalDiscount({shouldUpdate:false});
   updateTotalsUI();
 }
-  
+
 /* ====== Cálculos SOBRE PVP ====== */
 function computeLine(it){
   const unit = Number(it.pricePVP||0);
@@ -662,7 +539,6 @@ function computeLine(it){
   const total = unitAfter * qty;
   return {unit, unitAfter, base, descLine, total};
 }
-
 function computeTotals(){
   let subtotal=0, descLineas=0;
   for(const it of cart.values()){
@@ -679,14 +555,11 @@ function computeTotals(){
   const totalCompra = Math.max(0, subtotal - descGeneral);
   return { subtotal, descLineas, descGeneral, descuentosTotales, totalCompra };
 }
-
 function updateTotalsUI(){
   const t=computeTotals();
-  document.getElementById('sumAllDiscounts').textContent=fmt(t.descuentosTotales);
   document.getElementById('grandTotal').textContent=fmt(t.totalCompra);
   document.getElementById('grandTotalSticky').textContent=fmt(t.totalCompra);
   const count = Array.from(cart.values()).reduce((a,it)=>a+Math.abs(it.qty),0);
-  document.getElementById('itemsCount').textContent=fmt(count);
   document.getElementById('itemsCountSticky').textContent=`${fmt(count)} ítems`;
   updateChangeDisplays();
   saveUI();
@@ -731,7 +604,7 @@ function renderCart(){
     };
     tr.ondblclick=()=>{ const item=cart.get(it.code); if(item){ item.qty++; renderCart(); } };
   }
-  // botones inc/dec/del
+  // inc/dec/del
   tb.querySelectorAll('button').forEach(b=>{
     const code=b.dataset.code, a=b.dataset.a;
     b.onclick=()=>{
@@ -764,57 +637,114 @@ function renderCart(){
       updateTotalsUI();
     });
   });
-  // valor descuento
-  // valor descuento
-tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
-  el.oninput = ()=>{
-    const code = el.dataset.code;
-    const it   = cart.get(code);
-    if(!it) return;
-
-    const val  = Math.max(0, readMoney(el));
-    it.discValue = val;
-
-    // 👉 NUEVO: aquí la magia
-    const seg = el.closest('tr')?.querySelector('.seg[data-line]');
-
-    // Si no hay tipo de descuento aún y escribe algo
-    if(it.discType === 'none' && val > 0){
-      it.discType = (val > 100) ? 'amount' : 'percent';
-      if(seg){
-        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        seg.querySelector(`button[data-v="${it.discType==='amount'?'amount':'percent'}"]`)?.classList.add('active');
+  // valor descuento con auto-$ si >100
+  tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
+    el.oninput = ()=>{
+      const code = el.dataset.code;
+      const it   = cart.get(code);
+      if(!it) return;
+      const val  = Math.max(0, readMoney(el));
+      it.discValue = val;
+      const seg = el.closest('tr')?.querySelector('.seg[data-line]');
+      if(it.discType === 'none' && val > 0){
+        it.discType = (val > 100) ? 'amount' : 'percent';
+        if(seg){
+          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+          seg.querySelector(`button[data-v="${it.discType==='amount'?'amount':'percent'}"]`)?.classList.add('active');
+        }
       }
-    }
-
-    // Si ya estaba en % y pasa de 100, forzar a $
-    if(it.discType === 'percent' && val > 100){
-      it.discType = 'amount';
-      if(seg){
-        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        seg.querySelector('button[data-v="amount"]')?.classList.add('active');
+      if(it.discType === 'percent' && val > 100){
+        it.discType = 'amount';
+        if(seg){
+          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+          seg.querySelector('button[data-v="amount"]')?.classList.add('active');
+        }
       }
-    }
-
-    // Si vuelve a 0, quitar el descuento
-    if(val === 0){
-      it.discType = 'none';
-      if(seg){
-        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        seg.querySelector('button[data-a="discNone"]')?.classList.add('active');
+      if(val === 0){
+        it.discType = 'none';
+        if(seg){
+          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+          seg.querySelector('button[data-a="discNone"]')?.classList.add('active');
+        }
       }
-    }
-
-    const row = el.closest('tr');
-    const c   = computeLine(it);
-    row.querySelector('.lineTotal').textContent = '$' + fmt(c.total);
-    updateTotalsUI();
-  };
-});
-
+      const row = el.closest('tr');
+      const c   = computeLine(it);
+      row.querySelector('.lineTotal').textContent = '$' + fmt(c.total);
+      updateTotalsUI();
+    };
+  });
 
   updateTotalsUI();
 }
+
+/* ====== Bodega simple ====== */
+function updateBodegaPanel(){
+  const box = document.getElementById('bodegaList'); if(!box) return;
+  const items = [];
+  for(const it of cart.values()){
+    const qty = Math.max(0, it.qty);
+    if(qty>0){ items.push({code:it.code, title:it.title, qty}); }
+  }
+  if(items.length===0){ box.textContent = 'Sin sugerencias por ahora'; return; }
+  box.innerHTML = items.map(x => (
+    `<div class="bitem">
+      <div><div class="t">${x.title}</div><div class="small">Código: ${x.code}</div></div>
+      <button class="ghost" data-bcode="${x.code}" data-bqty="${x.qty}">Traer ${x.qty}</button>
+    </div>`
+  )).join('');
+  box.querySelectorAll('button[data-bcode]').forEach(btn=>{
+    btn.onclick = ()=>{ toast('Marcado para reposición desde bodega'); };
+  });
+}
+
+/* ====== Pago & vuelto (nuevo COBRO) ====== */
+let currentMethod = null;
+document.querySelectorAll('.payBtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.payBtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMethod = btn.dataset.method;
+    const efectivoBox = document.getElementById('efectivoBox');
+    efectivoBox.style.display = (currentMethod === 'efectivo') ? 'block' : 'none';
+    updateVuelto();
+  });
+});
+document.getElementById('pagaCon').addEventListener('input', updateVuelto);
+function updateVuelto(){
+  const total = computeTotals().totalCompra;
+  const pago = readMoney('pagaCon');
+  const vuelto = Math.max(0, pago - total);
+  document.getElementById('vueltoDisplay').textContent = '$' + fmt(vuelto);
+}
+
+/* Split visual bar */
+const splitToggle = document.getElementById('splitToggle');
+splitToggle.addEventListener('change', ()=>{
+  const bar = document.getElementById('splitBar');
+  if(!splitToggle.checked){
+    bar.style.background = 'linear-gradient(to right,#537BFF 100%,#FF70D7 0%)';
+  } else {
+    bar.style.background = 'linear-gradient(to right,#FF6B4A 50%,#8B5CF6 50%)';
+  }
+  saveUI();
+});
+
+/* Guardar carro */
+document.getElementById('saveCartBtn').addEventListener('click', ()=>{
+  if(cart.size===0){ toast('No hay productos en el carro','err'); beepError(); return; }
+  const data = Array.from(cart.values());
+  try{
+    localStorage.setItem('saved_cart', JSON.stringify(data));
+    toast('Carro guardado ✅');
+  }catch{
+    toast('Error al guardar','err'); beepError();
+  }
+});
+
+/* Menú 3 puntos */
+document.getElementById('menuCobro').addEventListener('click', ()=>{
+  toast('Menú de opciones (en desarrollo)');
+});
 
 /* ====== Omnibox & búsqueda ====== */
 const omni = document.getElementById('omniInput');
@@ -822,10 +752,8 @@ const results = document.getElementById('searchResults');
 let suggIndex=-1;
 function hideSuggestions(){ results.hidden = true; suggIndex=-1; omni.setAttribute('aria-expanded','false'); }
 function showSuggestions(){ results.hidden = false; omni.setAttribute('aria-expanded','true'); }
-
 const norm = s => (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
-// checksums
 function ean13valid(d){
   if(!/^\d{13}$/.test(d)) return false;
   const a = d.split('').map(Number);
@@ -849,7 +777,6 @@ function isCodeLike(s){
   return {ok:false};
 }
 
-// scoring
 function lev(a,b){
   a=norm(a); b=norm(b);
   const m=a.length, n=b.length; if(m===0) return n; if(n===0) return m;
@@ -905,7 +832,6 @@ function renderSuggestions(list){
   });
   showSuggestions();
 }
-
 let searchTimer=null;
 async function doSearch(q){
   clearTimeout(searchTimer);
@@ -970,74 +896,102 @@ function addOrInc(code, product){
   renderCart();
 }
 
-
-/* ====== Split auto-complete helpers ====== */
-let lastEditedSplit = 'amount1';
-
-/* ====== Bodega panel (simple suggestions based on current cart) ====== */
-function updateBodegaPanel(){
-  const box = document.getElementById('bodegaList'); if(!box) return;
-  const items = [];
-  for(const it of cart.values()){
-    const qty = Math.max(0, it.qty);
-    if(qty>0){
-      items.push({code:it.code, title:it.title, qty});
-    }
-  }
-  if(items.length===0){
-    box.textContent = 'Sin sugerencias por ahora';
-    return;
-  }
-  box.innerHTML = items.map(x => (
-    `<div class="bitem">
-      <div><div class="t">${x.title}</div><div class="small">Código: ${x.code}</div></div>
-      <button class="ghost" data-bcode="${x.code}" data-bqty="${x.qty}">Traer ${x.qty}</button>
-    </div>`
-  )).join('');
-  box.querySelectorAll('button[data-bcode]').forEach(btn=>{
-    btn.onclick = ()=>{
-      toast('Marcado para reposición desde bodega');
-    };
-  });
+/* ====== Outbox offline ====== */
+function getOutbox(){ try{ return JSON.parse(localStorage.getItem('pos_outbox')||'[]'); }catch{ return []; } }
+function setOutbox(arr){ try{ localStorage.setItem('pos_outbox', JSON.stringify(arr)); }catch{} }
+function updateOutboxUI(){
+  const count = getOutbox().length;
+  document.getElementById('retryOutboxBtn').style.display = count>0 ? 'inline-flex' : 'none';
 }
-
-/* ====== Pago & vuelto ====== */
-  /* === UI: Badges de método con iconos (Punto 9) === */
-function updateMethodBadges(){
-  const map = { efectivo:'💵 Efectivo', debito:'💳 Débito', credito:'💳 Crédito', transferencia:'🔁 Transferencia' };
-  const b1 = document.getElementById('methodBadge1');
-  const b2 = document.getElementById('methodBadge2');
-  if(b1){ const m1 = document.getElementById('payMethod1').value; b1.textContent = map[m1] || 'Método'; }
-  if(b2){ const m2 = document.getElementById('payMethod2').value; b2.textContent = map[m2] || 'Método'; }
-}
-
-function updateChangeDisplays(){
-  const total = computeTotals().totalCompra;
-  const method1 = document.getElementById('payMethod1').value;
-  const split = document.getElementById('splitToggle').checked;
-  updateMethodBadges();
-  const cashBox1 = document.getElementById('cashBox1');
-  const cashBox2 = document.getElementById('cashBox2');
-  cashBox1.style.display = (method1==='efectivo') ? 'flex' : 'none';
-  if(!split){
-    const given1 = readMoney('cashGiven1');
-    const change1 = Math.max(0, (method1==='efectivo' ? given1 : 0) - total);
-    document.getElementById('cashChange1').textContent=fmt(change1);
-    document.getElementById('splitSection').style.display='none';
-    return;
+async function processOutbox(){
+  const q = getOutbox();
+  if(q.length===0) return;
+  const remaining=[];
+  for(const sale of q){
+    try{ await cloudRegisterSale(sale.payload); }
+    catch{ remaining.push(sale); }
   }
-  document.getElementById('splitSection').style.display='block';
-  const method2 = document.getElementById('payMethod2').value;
-  cashBox2.style.display = (method2==='efectivo') ? 'flex' : 'none';
-  const a1 = Math.max(0, readMoney('amount1'));
-  const a2 = Math.max(0, readMoney('amount2'));
-  const g1 = readMoney('cashGiven1');
-  const g2 = readMoney('cashGiven2');
-  document.getElementById('cashChange1').textContent = fmt(method1==='efectivo' ? Math.max(0, g1 - (a1 || 0)) : 0);
-  document.getElementById('cashChange2').textContent = fmt(method2==='efectivo' ? Math.max(0, g2 - (a2 || 0)) : 0);
+  setOutbox(remaining); updateOutboxUI();
 }
+setInterval(processOutbox, 30000);
+document.getElementById('retryOutboxBtn')?.addEventListener('click', processOutbox);
 
-/* ====== Ticket (simple HTML) ====== */
+/* ====== Cobrar ====== */
+async function cobrar(){
+  if(cart.size===0){ toast('Carrito vacío','err'); beepError(); focusOmni(); return; }
+  const sums = computeTotals();
+
+  // Único pago (usando método seleccionado arriba)
+  let mainMethod = currentMethod || 'debito';
+  let payments = [];
+  if(!splitToggle.checked){
+    const cashGiven = readMoney('pagaCon');
+    payments.push({method:mainMethod, amount:sums.totalCompra, cashGiven:(mainMethod==='efectivo'?cashGiven:undefined)});
+  }else{
+    // Ejemplo básico: 50/50 entre el método activo y transferencia
+    const half = Math.round(sums.totalCompra/2);
+    payments.push({method:mainMethod, amount:half});
+    payments.push({method:'transferencia', amount:sums.totalCompra - half});
+  }
+
+  const items=[]; for(const it of cart.values()){
+    items.push({code:it.code,title:it.title,qty:it.qty,priceGross:it.pricePVP,discType:it.discType,discValue:Number(it.discValue||0)});
+  }
+  const payload = { items, payments, total: sums.totalCompra, discounts: sums.descuentosTotales, returnMode: document.getElementById('returnMode').checked };
+
+  try{
+    const resp = await cloudRegisterSale(payload);
+    const saleId = resp.saleId || ('LOCAL-' + Date.now());
+    const html = buildTicketHTML(saleId, items, sums, payments, payload.returnMode);
+    lastTicketHTML = html;
+    const w=window.open('','_blank','width=430,height=640'); w.document.write(html); w.document.close(); w.print();
+    cart.clear(); renderCart(); focusOmni();
+    resetGlobalDiscount();
+    toast(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada ✅');
+  }catch(err){
+    const q = getOutbox();
+    q.push({ts:Date.now(), payload});
+    setOutbox(q); updateOutboxUI();
+    toast('Sin conexión. Venta guardada offline.','err'); beepError();
+  }
+}
+document.getElementById('finishBtnSticky').addEventListener('click', cobrar);
+
+/* Totales duplicados y bodega sync */
+const _updateTotalsUI_orig = updateTotalsUI;
+updateTotalsUI = function(){
+  _updateTotalsUI_orig();
+  updateBodegaPanel();
+};
+const _renderCart_orig = renderCart;
+renderCart = function(){
+  _renderCart_orig();
+  updateBodegaPanel();
+};
+
+/* Global discount UI */
+const genSeg=document.getElementById('genSeg');
+genSeg.addEventListener('click',(e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const v=e.target.dataset.v; document.getElementById('globalDiscType').value=v;
+  updateTotalsUI();
+});
+const gInput = document.getElementById('globalDiscValue');
+gInput.addEventListener('focus', ()=>{ if(readMoney(gInput)===0){ try{ gInput.select(); }catch{} gInput.value=''; } });
+gInput.addEventListener('input', ()=>{
+  const v = readMoney(gInput);
+  if(v > 100){
+    document.getElementById('globalDiscType').value = 'amount';
+    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    const amtBtn = genSeg.querySelector('button[data-v="amount"]');
+    if(amtBtn) amtBtn.classList.add('active');
+  }
+  updateTotalsUI();
+});
+
+/* Ticket HTML */
 function buildTicketHTML(saleId, items, sums, payments, isReturn){
   const lines = items.map(it=>{
     const {unitAfter} = computeLine(it);
@@ -1063,281 +1017,16 @@ function buildTicketHTML(saleId, items, sums, payments, isReturn){
     </body></html>`;
 }
 
-/* ====== Outbox offline ====== */
-function getOutbox(){ try{ return JSON.parse(localStorage.getItem('pos_outbox')||'[]'); }catch{ return []; } }
-function setOutbox(arr){ try{ localStorage.setItem('pos_outbox', JSON.stringify(arr)); }catch{} }
-function updateOutboxUI(){
-  const count = getOutbox().length;
-  document.getElementById('retryOutboxBtn').style.display = count>0 ? 'inline-flex' : 'none';
-}
-async function processOutbox(){
-  const q = getOutbox();
-  if(q.length===0) return;
-  const remaining=[];
-  for(const sale of q){
-    try{ await cloudRegisterSale(sale.payload); }
-    catch{ remaining.push(sale); }
-  }
-  setOutbox(remaining); updateOutboxUI();
-}
-setInterval(processOutbox, 30000);
-document.getElementById('retryOutboxBtn')?.addEventListener('click', processOutbox);
-
-/* ====== Cobrar ====== */
-async function cobrar(){
-  if(cart.size===0){ toast('Carrito vacío','err'); beepError(); focusOmni(); return; }
-  const sums = computeTotals();
-  const split = document.getElementById('splitToggle').checked;
-  let payments=[];
-  const m1 = document.getElementById('payMethod1').value;
-  if(!split){
-    const cash1 = readMoney('cashGiven1');
-    payments.push({method:m1, amount:sums.totalCompra, cashGiven:(m1==='efectivo'?cash1:undefined)});
-  }else{
-    const m2 = document.getElementById('payMethod2').value;
-    const a1 = Math.max(0, readMoney('amount1'));
-    const a2 = Math.max(0, readMoney('amount2'));
-    const cash1 = readMoney('cashGiven1');
-    const cash2 = readMoney('cashGiven2');
-    const sum = a1 + a2;
-    if(Math.abs(sum - sums.totalCompra) > 1){
-      toast('La suma de montos (pago dividido) debe ser igual al Total de compra.','err'); beepError(); return;
-    }
-    payments.push({method:m1, amount:a1, cashGiven:(m1==='efectivo'?cash1:undefined)});
-    payments.push({method:m2, amount:a2, cashGiven:(m2==='efectivo'?cash2:undefined)});
-  }
-
-  const items=[]; for(const it of cart.values()){
-    items.push({code:it.code,title:it.title,qty:it.qty,priceGross:it.pricePVP,discType:it.discType,discValue:Number(it.discValue||0)});
-  }
-  const payload = { items, payments, total: sums.totalCompra, discounts: sums.descuentosTotales, returnMode: document.getElementById('returnMode').checked };
-
-  try{
-    const resp = await cloudRegisterSale(payload);
-    const saleId = resp.saleId || ('LOCAL-' + Date.now());
-    const html = buildTicketHTML(saleId, items, sums, payments, payload.returnMode);
-    lastTicketHTML = html;
-    const w=window.open('','_blank','width=430,height=640'); w.document.write(html); w.document.close(); w.print();
-    cart.clear(); renderCart(); focusOmni();
-    resetGlobalDiscount();
-    toast(payload.returnMode ? 'Cambio registrado ✅' : 'Venta registrada ✅');
-  }catch(err){
-    const q = getOutbox();
-    q.push({ts:Date.now(), payload});
-    setOutbox(q); updateOutboxUI();
-    toast('Sin conexión. Venta guardada offline.','err'); beepError();
-  }
-}
-document.getElementById('finishBtn').onclick=cobrar;
-document.getElementById('finishBtnSticky').onclick=cobrar;
-document.getElementById('reprintBtn').onclick=()=>{
-  if(!lastTicketHTML){ toast('Aún no hay ticket para reimprimir','err'); beepError(); return; }
-  const w=window.open('','_blank','width=430,height=640'); w.document.write(lastTicketHTML); w.document.close(); w.print();
-};
-
-/* ====== Eventos generales ====== */
-document.getElementById('clearBtn').onclick=async ()=>{
-  const ok = await confirmBox('¿Vaciar el carrito?');
-  if(ok){ cart.clear(); renderCart(); focusOmni(); toast('Carrito vacío'); }
-};
-document.addEventListener('keydown',(e)=>{
-  if(e.key==='Delete' && selectedCode){ cart.delete(selectedCode); selectedCode=null; renderCart(); toast('Ítem eliminado'); }
-});
-// descuento general
-const genSeg=document.getElementById('genSeg');
-genSeg.addEventListener('click',(e)=>{
-  if(e.target.tagName!=='BUTTON') return;
-  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-  e.target.classList.add('active');
-  const v=e.target.dataset.v; document.getElementById('globalDiscType').value=v;
-  updateTotalsUI();
-});
-// Improved global discount input: clear '0' on focus and auto-switch to $ if >100
-const gInput = document.getElementById('globalDiscValue');
-gInput.addEventListener('focus', ()=>{ if(readMoney(gInput)===0){ try{ gInput.select(); }catch{} gInput.value=''; } });
-gInput.addEventListener('input', ()=>{
-  const v = readMoney(gInput);
-  if(v > 100){
-    document.getElementById('globalDiscType').value = 'amount';
-    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-    const amtBtn = genSeg.querySelector('button[data-v="amount"]');
-    if(amtBtn) amtBtn.classList.add('active');
-  }
-  updateTotalsUI();
-});
-
-/* === NUEVO: Lógica visual y funcional del panel de Cobro === */
-let currentMethod = null;
-
-document.querySelectorAll('.payBtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.payBtn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMethod = btn.dataset.method;
-    const efectivoBox = document.getElementById('efectivoBox');
-    efectivoBox.style.display = (currentMethod === 'efectivo') ? 'block' : 'none';
-    updateVuelto();
-  });
-});
-
-document.getElementById('pagaCon').addEventListener('input', updateVuelto);
-function updateVuelto(){
-  const total = computeTotals().totalCompra;
-  const pago = readMoney('pagaCon');
-  const vuelto = Math.max(0, pago - total);
-  document.getElementById('vueltoDisplay').textContent = '$' + fmt(vuelto);
-}
-
-const splitToggle = document.getElementById('splitToggle');
-splitToggle.addEventListener('change', ()=>{
-  const bar = document.getElementById('splitBar');
-  if(!splitToggle.checked){
-    bar.style.background = 'linear-gradient(to right,#537BFF 100%,#FF70D7 0%)';
-  } else {
-    bar.style.background = 'linear-gradient(to right,#537BFF 50%,#FF70D7 50%)';
-  }
-});
-
-document.getElementById('saveCartBtn').addEventListener('click', ()=>{
-  if(cart.size===0){ toast('No hay productos en el carro','err'); beepError(); return; }
-  const data = Array.from(cart.values());
-  try{
-    localStorage.setItem('saved_cart', JSON.stringify(data));
-    toast('Carro guardado ✅');
-  }catch{
-    toast('Error al guardar','err'); beepError();
-  }
-});
-
-document.getElementById('menuCobro').addEventListener('click', ()=>{
-  toast('Menú de opciones (en desarrollo)');
-});  
-// split toggle
-document.getElementById('splitToggle').addEventListener('change', ()=>{
-  const total = Math.round(computeTotals().totalCompra);
-  setMoneyValue('amount1', total);
-  setMoneyValue('amount2', 0);
-  updateChangeDisplays(); saveUI();
-});
-['payMethod1','cashGiven1','payMethod2','cashGiven2','amount1','amount2'].forEach(id=>{
-  const el=document.getElementById(id);
-  el?.addEventListener('input', updateChangeDisplays);
-  el?.addEventListener('change', saveUI);
-});
-  
-/* ====== Ayuda (trial) ====== */
+/* Help */
 function openHelp(){ document.getElementById('helpScrim').style.display='flex'; }
 function closeHelp(){ document.getElementById('helpScrim').style.display='none'; }
 document.getElementById('helpOpen').onclick=openHelp;
 document.getElementById('helpOpen2').onclick=openHelp;
 document.getElementById('helpClose').onclick=closeHelp;
-document.addEventListener('keydown', e=>{ if(e.key==='?' && !e.shiftKey){ openHelp(); }});
 
-// Inicial
+/* Inicial */
 loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox();
 attachMoneyFormatters();
-updateChangeDisplays();  
-
-
-/* === Wire split amount auto-completion === */
-document.getElementById('amount1')?.addEventListener('input', ()=>{
-  lastEditedSplit='amount1';
-  syncSplitFromA1();
-});
-document.getElementById('amount2')?.addEventListener('input', ()=>{
-  lastEditedSplit='amount2';
-  syncSplitFromA2();
-});
-
-/* Ajustar funciones de sincronización para redondear también */
-function syncSplitFromA1(){
-  if(!document.getElementById('splitToggle').checked) return;
-  const total = Math.round(computeTotals().totalCompra);
-  const a1El = document.getElementById('amount1');
-  const a2El = document.getElementById('amount2');
-  const a1 = Math.floor(readMoney(a1El));
-  setMoneyValue(a2El, Math.max(0, total - a1));
-  updateChangeDisplays();
-}
-function syncSplitFromA2(){
-  if(!document.getElementById('splitToggle').checked) return;
-  const total = Math.round(computeTotals().totalCompra);
-  const a1El = document.getElementById('amount1');
-  const a2El = document.getElementById('amount2');
-  const a2 = Math.floor(readMoney(a2El));
-  setMoneyValue(a1El, Math.max(0, total - a2));
-  updateChangeDisplays();
-}
-
-
-/* Re-sync when totals change (e.g., cart or discounts) */
-const _updateTotalsUI_orig = updateTotalsUI;
-updateTotalsUI = function(){
-  _updateTotalsUI_orig();
-  if(document.getElementById('splitToggle').checked){
-    if(lastEditedSplit==='amount1') syncSplitFromA1(); else syncSplitFromA2();
-  }
-  updateBodegaPanel();
-};
-
-/* Also refresh Bodega panel after cart renders */
-const _renderCart_orig = renderCart;
-renderCart = function(){
-  _renderCart_orig();
-  updateBodegaPanel();
-};
-
-
-/* === UX: per-line discount inputs ===
-   - Clear preset '0' when focusing the discount value box
-   - If value > 100 and current type is %, auto-switch to $
-   - If type is 'none' and user types a value, switch to % (<=100) or $ (>100)
-*/
-(function(){
-  const tbody = document.querySelector('#cartTable tbody');
-  if(!tbody) return;
-
-  tbody.addEventListener('focusin', (e)=>{
-    const el = e.target;
-    if(el && el.matches('input[data-a="discValue"]')){
-       if(readMoney(el) === 0){ try{ el.select(); }catch{} el.value = ''; }
-    }
-  });
-
-  tbody.addEventListener('input', (e)=>{
-    const el = e.target;
-    if(!(el && el.matches('input[data-a="discValue"]'))) return;
-    const code = el.dataset.code;
-    const it = cart.get(code);
-    if(!it) return;
-
-    const val = readMoney(el);
-    if(it.discType === 'none' && val > 0){
-      const seg = el.closest('tr')?.querySelector('.seg[data-line]');
-      if(val > 100){
-        it.discType = 'amount';
-        if(seg){
-          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-          seg.querySelector('button[data-v="amount"]').classList.add('active');
-        }
-      }else{
-        it.discType = 'percent';
-        if(seg){
-          seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-          seg.querySelector('button[data-v="percent"]').classList.add('active');
-        }
-      }
-    }else if(it.discType === 'percent' && val > 100){
-      it.discType = 'amount';
-      const seg = el.closest('tr')?.querySelector('.seg[data-line]');
-      if(seg){
-        seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-        seg.querySelector('button[data-v="amount"]').classList.add('active');
-      }
-    }
-    updateTotalsUI();
-  });
-})();
 </script>
 </body>
 </html>
