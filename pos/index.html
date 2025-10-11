@@ -287,19 +287,58 @@ th,td{ border-bottom:none } /* remove per-cell borders */
 </div>
 
     <!-- RIGHT: cobro -->
-    <div class="card">
-      <h2>💳 Cobro</h2>
+    <div class="card cobroCard">
+  <div style="display:flex;align-items:center;justify-content:space-between">
+    <h2>💳 COBRO</h2>
+    <button id="menuCobro" style="background:none;border:none;font-size:20px;cursor:pointer">⋮</button>
+  </div>
 
-      <!-- Descuento general -->
-      <div class="line" style="margin-top:10px;flex-wrap:wrap">
-        <label class="small" style="width:130px">Descuento general</label>
-        <div class="seg" id="genSeg">
-          <button type="button" data-v="percent" class="active">%</button>
-          <button type="button" data-v="amount">$</button>
-        </div>
-        <input id="globalDiscValue" type="text" inputmode="numeric" value="0" style="max-width:140px" data-format="money">
-        <input id="globalDiscType" type="hidden" value="percent">
-      </div>
+  <div class="line" style="margin-top:10px;flex-wrap:wrap">
+    <label class="small" style="width:100%">Descuento</label>
+    <div class="seg" id="genSeg">
+      <button type="button" data-v="amount">$</button>
+      <input id="globalDiscValue" type="text" inputmode="numeric" value="0"
+        style="width:80px;text-align:center;border:0;background:#fff;color:#000;font-weight:700" data-format="money">
+      <button type="button" data-v="percent">%</button>
+    </div>
+    <input id="globalDiscType" type="hidden" value="percent">
+  </div>
+
+  <div class="line" style="margin-top:16px;justify-content:center">
+    <div style="background:#537BFF;color:#fff;padding:12px 20px;border-radius:16px;text-align:center;font-size:22px;font-weight:800">
+      Total <br> $<span id="grandTotal">0</span>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <label class="small">Método de pago</label>
+  <div class="line" style="flex-wrap:wrap;gap:6px">
+    <button class="payBtn" data-method="debito">DÉBITO</button>
+    <button class="payBtn" data-method="credito">CRÉDITO</button>
+    <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
+    <button class="payBtn" data-method="efectivo">EFECTIVO</button>
+  </div>
+
+  <div id="efectivoBox" style="display:none;margin-top:10px">
+    <label class="small">PAGA CON</label>
+    <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" style="max-width:140px">
+    <label class="small" style="margin-top:6px">VUELTO</label>
+    <div style="font-size:20px;font-weight:700" id="vueltoDisplay">$0</div>
+  </div>
+
+  <hr class="sep">
+
+  <div class="line" style="align-items:center;justify-content:space-between">
+    <label class="small">Pago dividido</label>
+    <input type="checkbox" id="splitToggle" style="transform:scale(1.4)">
+  </div>
+  <div id="splitBar" style="height:6px;width:100%;border-radius:10px;background:linear-gradient(to right,#537BFF 100%,#FF70D7 0%)"></div>
+
+  <hr class="sep">
+
+  <button id="saveCartBtn" class="ghost" style="width:100%">Guardar carro</button>
+</div>
 
       <hr class="sep">
 
@@ -1155,6 +1194,52 @@ gInput.addEventListener('input', ()=>{
   updateTotalsUI();
 });
 
+/* === NUEVO: Lógica visual y funcional del panel de Cobro === */
+let currentMethod = null;
+
+document.querySelectorAll('.payBtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.payBtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentMethod = btn.dataset.method;
+    const efectivoBox = document.getElementById('efectivoBox');
+    efectivoBox.style.display = (currentMethod === 'efectivo') ? 'block' : 'none';
+    updateVuelto();
+  });
+});
+
+document.getElementById('pagaCon').addEventListener('input', updateVuelto);
+function updateVuelto(){
+  const total = computeTotals().totalCompra;
+  const pago = readMoney('pagaCon');
+  const vuelto = Math.max(0, pago - total);
+  document.getElementById('vueltoDisplay').textContent = '$' + fmt(vuelto);
+}
+
+const splitToggle = document.getElementById('splitToggle');
+splitToggle.addEventListener('change', ()=>{
+  const bar = document.getElementById('splitBar');
+  if(!splitToggle.checked){
+    bar.style.background = 'linear-gradient(to right,#537BFF 100%,#FF70D7 0%)';
+  } else {
+    bar.style.background = 'linear-gradient(to right,#537BFF 50%,#FF70D7 50%)';
+  }
+});
+
+document.getElementById('saveCartBtn').addEventListener('click', ()=>{
+  if(cart.size===0){ toast('No hay productos en el carro','err'); beepError(); return; }
+  const data = Array.from(cart.values());
+  try{
+    localStorage.setItem('saved_cart', JSON.stringify(data));
+    toast('Carro guardado ✅');
+  }catch{
+    toast('Error al guardar','err'); beepError();
+  }
+});
+
+document.getElementById('menuCobro').addEventListener('click', ()=>{
+  toast('Menú de opciones (en desarrollo)');
+});  
 // split toggle
 document.getElementById('splitToggle').addEventListener('change', ()=>{
   const total = Math.round(computeTotals().totalCompra);
