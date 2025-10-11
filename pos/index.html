@@ -7,14 +7,8 @@
 
 <style>
 :root{
-  --bg:#FFF9EB;
-  --ink:#1F1A17;
-  --sepia:#6A3B2E;
-  --terra:#FF6B4A;
-  --green:#00B37E;
-  --line:#FFE3C7;
-  --muted:#7A6A60;
-  --card:#FFFFFF;
+  --bg:#FFF9EB; --ink:#1F1A17; --sepia:#6A3B2E; --terra:#FF6B4A;
+  --green:#00B37E; --line:#FFE3C7; --muted:#7A6A60; --card:#FFFFFF;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -66,13 +60,7 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 
 .row-selected{background:#FFF4EE}
 
-.totalBlock{display:flex;flex-direction:column;gap:8px}
-.totalDisplay{font-size:22px;font-weight:800;color:var(--ink)}
-.badges{display:flex;gap:8px;flex-wrap:wrap}
-.badge{background:#FFF4CC;border:1px solid #FFDCA3;color:#7A3E00;border-radius:999px;padding:6px 10px;font-size:12px}
-.vueltoXL{font-size:20px;font-weight:800;letter-spacing:.2px}
 .line{display:flex;align-items:center;gap:8px}
-
 .stickyBar{position:fixed;left:0;right:0;bottom:0;z-index:9000;display:flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(250,247,242,.9);backdrop-filter:saturate(1.1) blur(6px);border-top:1px solid var(--line);padding:10px 12px}
 
 #cartTable .seg[data-line]{display:flex;flex:0 0 120px;max-width:120px}
@@ -93,23 +81,44 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 .container{margin-left:72px}
 .navLinks{display:none !important}
 
-/* COBRO (azul) */
+/* COBRO (azul oscuro) */
 .cobroCard{background:#1c2353!important;color:#fff!important;border:none!important;box-shadow:0 6px 20px rgba(0,0,0,.3)}
 .cobroCard .small,.cobroCard label,.cobroCard h2{color:#fff!important}
 .cobroCard .payBtn{width:100%}
 
-/* Píldora de descuento */
-#genSeg{display:inline-flex} /* sin width fijo */
-.seg.pill{display:inline-flex;align-items:center;gap:8px;background:#26306a;border:0;padding:4px;border-radius:999px}
-.seg.pill button{width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;border:0;background:transparent;color:#cfd6ff;font-weight:900}
-.seg.pill button.active{background:#4150b4;color:#fff}
-.seg.pill input{width:96px;height:34px;border:0;background:#fff;color:#000;font-weight:800;text-align:center;border-radius:999px;outline:none}
+/* Píldora de descuento — $ a la izq. y % dentro del óvalo */
+#genSeg{display:inline-flex}
+.seg.pill{
+  display:flex;align-items:center;gap:10px;
+  background:#26306a;border:0;padding:6px 8px;border-radius:999px;
+}
+.seg.pill .pill-icon{
+  width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;
+  border-radius:50%;border:0;background:transparent;color:#cfd6ff;font-weight:900;
+}
+.seg.pill .pill-icon.active{background:#4150b4;color:#fff}
+.seg.pill .pill-input{position:relative;display:flex;align-items:center}
+.seg.pill .pill-input input{
+  width:120px;height:34px;border:0;background:#fff;color:#000;
+  font-weight:800;text-align:center;border-radius:999px;outline:none;
+  padding-right:36px; /* deja espacio para el % */
+}
+.seg.pill .pill-input .pill-percent{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  width:28px;height:28px;border-radius:50%;border:0;cursor:pointer;
+  background:transparent;color:#4150b4;font-weight:900;line-height:1;
+}
+.seg.pill .pill-input .pill-percent.active{background:#4150b4;color:#fff}
 
-/* Total azul con descuento */
-.totalChip{position:relative;background:#537BFF;color:#fff;padding:16px 24px 18px;border-radius:20px;text-align:left;min-width:220px;box-shadow:0 10px 22px rgba(0,0,0,.18)}
-.totalChip .t1{font-size:14px;opacity:.92;margin-bottom:4px}
-.totalChip .t2{font-size:28px;font-weight:900;line-height:1}
-.totalChip .t3{position:absolute;right:14px;bottom:10px;font-size:14px;opacity:.9;font-weight:600}
+/* Total azul centrado con descuento abajo-derecha */
+.totalChip{
+  position:relative;background:#537BFF;color:#fff;
+  padding:22px 24px 30px;border-radius:22px;min-width:260px;
+  box-shadow:0 10px 22px rgba(0,0,0,.18);text-align:center;
+}
+.totalChip .t1{position:absolute;top:10px;left:16px;font-size:14px;opacity:.92;margin:0;text-align:left}
+.totalChip .t2{font-size:40px;font-weight:900;line-height:1.05;margin:10px 0 16px}
+.totalChip .t3{position:absolute;right:16px;bottom:12px;font-size:16px;opacity:.95;font-weight:600}
 
 /* Switch Pago dividido */
 .toggle-switch{position:relative;display:inline-block;width:48px;height:24px}
@@ -193,7 +202,7 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
       </div>
     </div>
 
-    <!-- DERECHA: Cobro -->
+    <!-- DERECHA: COBRO -->
     <div class="card cobroCard">
       <div style="display:flex;align-items:center;justify-content:space-between">
         <h2>COBRO</h2>
@@ -204,15 +213,17 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
       <div class="line" style="margin-top:10px;flex-wrap:wrap">
         <label class="small" style="width:100%">Descuento</label>
         <div class="seg pill" id="genSeg">
-          <button type="button" data-v="amount" aria-label="Descuento en pesos">$</button>
-          <input id="globalDiscValue" type="text" inputmode="numeric" value="0" data-format="money" aria-label="Valor de descuento">
-          <button type="button" data-v="percent" aria-label="Descuento en porcentaje">%</button>
+          <button type="button" class="pill-icon" data-v="amount" aria-label="Descuento en pesos">$</button>
+          <div class="pill-input">
+            <input id="globalDiscValue" type="text" inputmode="numeric" value="0" data-format="money" aria-label="Valor de descuento">
+            <button type="button" class="pill-percent" data-v="percent" aria-label="Descuento en porcentaje">%</button>
+          </div>
         </div>
         <input id="globalDiscType" type="hidden" value="percent">
       </div>
 
       <!-- Total -->
-      <div class="line" style="margin-top:16px;justify-content:center">
+      <div class="line" style="margin-top:8px;justify-content:center">
         <div class="totalChip">
           <div class="t1">Total</div>
           <div class="t2">$<span id="grandTotal">0</span></div>
@@ -343,6 +354,7 @@ document.getElementById('saveCartBtn').addEventListener('click',()=>{if(cart.siz
 
 document.getElementById('menuCobro').addEventListener('click',()=>{toast('Menú de opciones (en desarrollo)');});
 
+/* ===== Omnibox & búsqueda ===== */
 const omni=document.getElementById('omniInput');const results=document.getElementById('searchResults');let suggIndex=-1;
 function hideSuggestions(){results.hidden=true;suggIndex=-1;omni.setAttribute('aria-expanded','false');}
 function showSuggestions(){results.hidden=false;omni.setAttribute('aria-expanded','true');}
@@ -380,20 +392,63 @@ document.getElementById('finishBtnSticky').addEventListener('click',cobrar);
 const _updateTotalsUI_orig=updateTotalsUI;updateTotalsUI=function(){_updateTotalsUI_orig();updateBodegaPanel();};
 const _renderCart_orig=renderCart;renderCart=function(){_renderCart_orig();updateBodegaPanel();};
 
+/* ===== Descuento global — UI ===== */
 const genSeg=document.getElementById('genSeg');
-genSeg.addEventListener('click',(e)=>{if(e.target.tagName!=='BUTTON')return;genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));e.target.classList.add('active');const v=e.target.dataset.v;document.getElementById('globalDiscType').value=v;updateTotalsUI();});
+genSeg.addEventListener('click',(e)=>{
+  if(e.target.tagName!=='BUTTON') return;
+  genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const v=e.target.dataset.v;
+  document.getElementById('globalDiscType').value=v;
+  updateTotalsUI();
+});
 const gInput=document.getElementById('globalDiscValue');
 gInput.addEventListener('focus',()=>{if(readMoney(gInput)===0){try{gInput.select();}catch{}gInput.value='';}});
-gInput.addEventListener('input',()=>{const v=readMoney(gInput);if(v>100){document.getElementById('globalDiscType').value='amount';genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));genSeg.querySelector('button[data-v="amount"]')?.classList.add('active');}updateTotalsUI();});
+gInput.addEventListener('input',()=>{
+  const v=readMoney(gInput);
+  if(v>100){
+    document.getElementById('globalDiscType').value='amount';
+    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    genSeg.querySelector('button[data-v="amount"]')?.classList.add('active');
+  }else{
+    document.getElementById('globalDiscType').value='percent';
+    genSeg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+    genSeg.querySelector('button[data-v="percent"]')?.classList.add('active');
+  }
+  updateTotalsUI();
+});
 
-function buildTicketHTML(saleId,items,sums,payments,isReturn){const lines=items.map(it=>{const {unitAfter}=computeLine(it);const d=it.discType==='percent'?` (-${it.discValue}% )`:it.discType==='amount'?` (-$${fmt(it.discValue)} c/u)`:'';return `${it.qty} x ${it.title} — $${fmt(unitAfter)}${d}`;}).join('<br>');const title=isReturn?'Ticket de Cambio':'Ticket de Venta';const payText=payments.map(p=>`${p.method}: $${fmt(p.amount)}${p.cashGiven?` (paga con $${fmt(p.cashGiven)})`:''}`).join(' · ');return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title><style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head><body><h1>Librería de Fuego</h1><div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div><hr>${lines}<hr><div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div><div><b>Total de compra: $${fmt(sums.totalCompra)}</b></div><div>Pago: ${payText}</div><hr><small>Gracias por tu compra</small></body></html>`;}
+/* ===== Ticket ===== */
+function buildTicketHTML(saleId,items,sums,payments,isReturn){
+  const lines=items.map(it=>{
+    const {unitAfter}=computeLine(it);
+    const d=it.discType==='percent'?` (-${it.discValue}% )`:it.discType==='amount'?` (-$${fmt(it.discValue)} c/u)`:'';
+    return `${it.qty} x ${it.title} — $${fmt(unitAfter)}${d}`;
+  }).join('<br>');
+  const title=isReturn?'Ticket de Cambio':'Ticket de Venta';
+  const payText=payments.map(p=>`${p.method}: $${fmt(p.amount)}${p.cashGiven?` (paga con $${fmt(p.cashGiven)})`:''}`).join(' · ');
+  return `<!doctype html><html><head><meta charset='utf-8'><title>${title}</title>
+    <style>body{font-family:monospace;padding:8px}h1{font-size:16px;margin:0 0 6px}hr{border:none;border-top:1px dashed #888;margin:6px 0}</style></head>
+    <body>
+      <h1>Librería de Fuego</h1>
+      <div>${title} #${saleId} — ${new Date().toLocaleString('es-CL')}</div>
+      <hr>${lines}<hr>
+      <div>Descuentos totales: $${fmt(sums.descuentosTotales)}</div>
+      <div><b>Total de compra: $${fmt(sums.totalCompra)}</b></div>
+      <div>Pago: ${payText}</div>
+      <hr><small>Gracias por tu compra</small>
+    </body></html>`;
+}
 
+/* ===== Ayuda ===== */
 function openHelp(){document.getElementById('helpScrim').style.display='flex'}
 function closeHelp(){document.getElementById('helpScrim').style.display='none'}
 document.getElementById('helpOpen').onclick=openHelp;
 document.getElementById('helpOpen2').onclick=openHelp;
 document.getElementById('helpClose').onclick=closeHelp;
 
+/* ===== Init ===== */
+let currentMethod=null;
 loadUI();renderCart();focusOmni();updateOutboxUI();processOutbox();attachMoneyFormatters();
 </script>
 </body>
