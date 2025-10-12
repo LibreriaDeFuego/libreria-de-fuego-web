@@ -9,6 +9,7 @@
 :root{
   --bg:#FFF9EB; --ink:#1F1A17; --sepia:#6A3B2E; --terra:#FF6B4A;
   --green:#00B37E; --line:#FFE3C7; --muted:#7A6A60; --card:#FFFFFF;
+  --violet:#8B5CF6; --navy:#1c2353;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -80,18 +81,17 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 .navLinks{display:none !important}
 
 /* COBRO (azul oscuro) */
-.cobroCard{background:#1c2353!important;color:#fff!important;border:none!important;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.cobroCard{background:var(--navy)!important;color:#fff!important;border:none!important;box-shadow:0 6px 20px rgba(0,0,0,.3)}
 .cobroCard .small,.cobroCard label,.cobroCard h2{color:#fff!important}
-/* “COBRO” un poco más grande */
 .cobroCard h2{font-size:22px}
 .cobroCard .payBtn{width:100%;border-color:transparent}
 .cobroCard .payBtn.active{background:#ff751f;color:#fff;border-color:#ff751f}
 
-/* ======= NUEVO SWITCH DESCUENTO (monto + lado activo) ======= */
+/* ======= SWITCH DESCUENTO ======= */
 #genSeg{display:inline-flex}
 .seg.pill{
   --iconW:34px;
-  --inputW:140px; /* ancho del campo */
+  --inputW:140px;
   --gap:8px;
   --pad:6px;
   position:relative;
@@ -102,18 +102,13 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 }
 .seg.pill > *{position:relative;z-index:2}
 .seg.pill .switcher{
-  position:absolute;
-  top:var(--pad); bottom:var(--pad);
-  left:var(--pad);
+  position:absolute; top:var(--pad); bottom:var(--pad); left:var(--pad);
   width:calc(var(--iconW) + var(--gap) + var(--inputW));
-  background:#ffffff;border-radius:999px;
-  transition:transform .22s ease;
-  z-index:1;
+  background:#ffffff;border-radius:999px; transition:transform .22s ease; z-index:1;
 }
 .seg.pill[data-state="percent"] .switcher{transform:translateX(calc(var(--iconW) + var(--gap)));}
 .seg.pill[data-state="amount"] .switcher{transform:translateX(0);}
-.seg.pill .pill-icon,
-.seg.pill .pill-percent{
+.seg.pill .pill-icon,.seg.pill .pill-percent{
   width:var(--iconW);height:34px;display:inline-flex;align-items:center;justify-content:center;
   font-weight:900;border:0;background:transparent;cursor:pointer;color:#cfd6ff;
 }
@@ -121,11 +116,9 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
   width:var(--inputW);height:34px;border:0;background:transparent;color:#000;
   font-weight:800;text-align:center;border-radius:999px;outline:none;padding:0 6px;
 }
-.seg.pill .pill-icon.active,
-.seg.pill .pill-percent.active{color:#1c2353}
-.seg.pill .hint{font-size:12px;opacity:.7}
+.seg.pill .pill-icon.active,.seg.pill .pill-percent.active{color:var(--navy)}
 
-/* Total azul centrado con descuento abajo-derecha */
+/* Total chip */
 .totalChip{
   position:relative;background:#537BFF;color:#fff;
   padding:22px 24px 30px;border-radius:22px;min-width:260px;
@@ -136,21 +129,29 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 .totalChip .t3{position:absolute;right:16px;bottom:12px;font-size:16px;opacity:.95;font-weight:600}
 
 /* Switch Pago dividido — versión pequeña */
-.toggle-switch{position:relative;display:inline-block;width:48px;height:24px}
+.toggle-switch{position:relative;display:inline-block;width:36px;height:20px}
 .toggle-switch input{opacity:0;width:0;height:0}
 .slider{position:absolute;inset:0;background:#ccc;border-radius:34px;transition:.3s;cursor:pointer}
-.slider:before{content:"";position:absolute;left:3px;bottom:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.3s}
+.slider:before{content:"";position:absolute;left:3px;bottom:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:.3s}
 .toggle-switch input:checked + .slider{background:#537BFF}
-.toggle-switch input:checked + .slider:before{transform:translateX(24px)}
-/* tamaño pequeño para que no choque con la barra */
-.toggle-switch.tiny{width:36px;height:20px}
-.toggle-switch.tiny .slider:before{width:14px;height:14px;bottom:3px;left:3px}
-.toggle-switch.tiny input:checked + .slider:before{transform:translateX(16px)}
+.toggle-switch input:checked + .slider:before{transform:translateX(16px)}
 
 /* Barra split */
 #splitBar{height:6px;width:100%;border-radius:10px;background:linear-gradient(to right,#537BFF 100%,#FF70D7 0%)}
 
-/* Link “Guardar carro” minimal */
+/* Paneles de detalle de pago */
+.payDetail{
+  background:#fff;color:#000;border-radius:18px;border:0;overflow:hidden;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+}
+.payDetail .header{
+  background:#ff751f;color:#fff;padding:10px 16px;font-weight:800;border-top-left-radius:18px;border-top-right-radius:18px;
+}
+.payDetail .body{padding:16px}
+.payDetail .body label{color:#333;font-size:14px;display:block;margin-bottom:4px}
+.payDetail .body input{width:160px;border:1px solid #E6E0D8;border-radius:8px;padding:8px 10px}
+
+/* Link Guardar */
 .link-minimal{background:none;border:0;color:#fff;padding:0;font-weight:700}
 .link-minimal:hover{text-decoration:underline;opacity:.9}
 </style>
@@ -257,31 +258,60 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
         </div>
       </div>
 
-      <!-- (quitado) Línea divisoria entre Total y Método de pago -->
-
       <!-- Métodos de pago -->
       <label class="small" style="margin-top:8px">Método de pago</label>
-      <div class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
+      <div id="payMethods" class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
         <button class="payBtn" data-method="debito">DÉBITO</button>
         <button class="payBtn" data-method="credito">CRÉDITO</button>
         <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
         <button class="payBtn" data-method="efectivo">EFECTIVO</button>
       </div>
 
-      <!-- Efectivo -->
-      <div id="efectivoBox" style="display:none;margin-top:10px">
-        <label class="small">PAGA CON</label>
-        <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" style="max-width:160px">
-        <label class="small" style="margin-top:6px">VUELTO</label>
-        <div style="font-size:20px;font-weight:700" id="vueltoDisplay">$0</div>
-      </div>
+      <!-- Detalles dinámicos -->
+      <div id="payDetails" style="margin-top:10px;display:flex;flex-direction:column;gap:10px">
+        <!-- EFECTIVO -->
+        <div class="payDetail" data-detail="efectivo" style="display:none">
+          <div class="header">EFECTIVO</div>
+          <div class="body">
+            <label>PAGA CON</label>
+            <input id="in_efectivo" type="text" inputmode="numeric" value="0" data-format="money">
+            <label style="margin-top:10px">VUELTO</label>
+            <div id="vueltoDisplay" style="font-size:20px;font-weight:800">$0</div>
+          </div>
+        </div>
 
-      <!-- (quitado) Línea divisoria entre EFECTIVO y Pago dividido -->
+        <!-- DÉBITO -->
+        <div class="payDetail" data-detail="debito" style="display:none">
+          <div class="header">DÉBITO</div>
+          <div class="body">
+            <label>PAGA CON</label>
+            <input id="in_debito" type="text" inputmode="numeric" value="0" data-format="money">
+          </div>
+        </div>
+
+        <!-- CRÉDITO -->
+        <div class="payDetail" data-detail="credito" style="display:none">
+          <div class="header">CRÉDITO</div>
+          <div class="body">
+            <label>PAGA CON</label>
+            <input id="in_credito" type="text" inputmode="numeric" value="0" data-format="money">
+          </div>
+        </div>
+
+        <!-- TRANSFERENCIA -->
+        <div class="payDetail" data-detail="transferencia" style="display:none">
+          <div class="header">TRANSFERENCIA</div>
+          <div class="body">
+            <label>PAGA CON</label>
+            <input id="in_transferencia" type="text" inputmode="numeric" value="0" data-format="money">
+          </div>
+        </div>
+      </div>
 
       <!-- Pago dividido -->
       <div class="line" style="align-items:center;justify-content:space-between;margin-top:8px">
         <label class="small">Pago dividido</label>
-        <label class="toggle-switch tiny">
+        <label class="toggle-switch">
           <input type="checkbox" id="splitToggle">
           <span class="slider"></span>
         </label>
@@ -307,18 +337,8 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 
 <div id="toasts" aria-live="polite" aria-atomic="true"></div>
 
-<div class="modalScrim" id="confirmScrim" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
-  <div class="modal">
-    <h3 id="confirmTitle">Confirmar</h3>
-    <p id="confirmMsg">¿Seguro?</p>
-    <div class="row">
-      <button id="confirmCancel" class="ghost">Cancelar</button>
-      <button id="confirmOk" class="primary">Aceptar</button>
-    </div>
-  </div>
-</div>
-
-<div class="modalScrim" id="helpScrim" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+<!-- Modales mínimos -->
+<div class="modalScrim" id="helpScrim" role="dialog" aria-modal="true" aria-labelledby="helpTitle" style="display:none">
   <div class="modal">
     <h3 id="helpTitle">Ayuda rápida</h3>
     <p><kbd>Enter</kbd> agrega el primer resultado • <kbd>Esc</kbd> cierra sugerencias • Doble clic fila: +1 • <kbd>Alt</kbd>+clic: −1 • <kbd>Supr</kbd>: quitar fila • <kbd>/</kbd> enfoca la búsqueda.</p>
@@ -404,9 +424,8 @@ async function loadProductsCached(){
 }
 
 /* ===== Estado POS ===== */
-const IVA_RATE=0.19;
 const cart=new Map();
-let selectedCode=null, lastTicketHTML='', lastScan={code:'',at:0};
+let lastTicketHTML='', lastScan={code:'',at:0};
 
 /* ===== Totales ===== */
 function computeLine(it){
@@ -439,8 +458,7 @@ function updateTotalsUI(){
   document.getElementById('grandDiscount').textContent=fmt(t.descuentosTotales);
   const count=[...cart.values()].reduce((a,it)=>a+Math.abs(it.qty),0);
   document.getElementById('itemsCountSticky').textContent=`${fmt(count)} ítems`;
-  updateVuelto();
-  saveUI();
+  updateVuelto(); // solo afecta cuando efectivo está visible
 }
 
 /* ===== Render del Carro ===== */
@@ -475,7 +493,7 @@ function renderCart(){
     attachMoneyFormatters(tr);
     tb.appendChild(tr);
 
-    tr.onclick=(ev)=>{ document.querySelectorAll('#cartTable tbody tr').forEach(r=>r.classList.remove('row-selected')); tr.classList.add('row-selected'); selectedCode=it.code; if(ev.altKey){ const item=cart.get(it.code); if(item){ item.qty--; if(item.qty===0) cart.delete(it.code); renderCart(); } } };
+    tr.onclick=(ev)=>{ document.querySelectorAll('#cartTable tbody tr').forEach(r=>r.classList.remove('row-selected')); tr.classList.add('row-selected'); if(ev.altKey){ const item=cart.get(it.code); if(item){ item.qty--; if(item.qty===0) cart.delete(it.code); renderCart(); } } };
     tr.ondblclick=()=>{ const item=cart.get(it.code); if(item){ item.qty++; renderCart(); } };
   }
   // + / − / quitar
@@ -484,56 +502,10 @@ function renderCart(){
     b.onclick=()=>{
       const it=cart.get(code); if(!it) return;
       if(a==='inc') it.qty++;
-      if(a==='dec') it.qty = (document.getElementById('returnMode').checked ? it.qty-1 : Math.max(0,it.qty-1));
+      if(a==='dec') it.qty = Math.max(0,it.qty-1);
       if(a==='del') cart.delete(code);
       if(it.qty===0) cart.delete(code);
       renderCart();
-    };
-  });
-  // cambio de tipo de descuento por línea
-  tb.querySelectorAll('.seg[data-line]').forEach(seg=>{
-    seg.addEventListener('click',(e)=>{
-      if(e.target.tagName!=='BUTTON') return;
-      const code=seg.dataset.line;
-      const it=cart.get(code); if(!it) return;
-      const act=e.target.dataset.a;
-      seg.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
-      e.target.classList.add('active');
-      if(act==='discType'){
-        it.discType=e.target.dataset.v;
-        if(!it.discValue) it.discValue = (it.discType==='percent'?1:100);
-      }else if(act==='discNone'){
-        it.discType='none'; it.discValue=0;
-      }
-      const row=seg.closest('tr');
-      const c=computeLine(it);
-      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
-      updateTotalsUI();
-    });
-  });
-  // valor descuento por línea (auto %/$)
-  tb.querySelectorAll('input[data-a="discValue"]').forEach(el=>{
-    el.oninput=()=>{
-      const code=el.dataset.code;
-      const it=cart.get(code); if(!it) return;
-      const val=Math.max(0, readMoney(el));
-      it.discValue = val;
-      const seg=el.closest('tr')?.querySelector('.seg[data-line]');
-      if(it.discType==='none' && val>0){
-        it.discType = (val>100) ? 'amount' : 'percent';
-        if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.remove('active')); seg.querySelector(`button[data-v="${it.discType==='amount'?'amount':'percent'}"]`)?.classList.add('active'); }
-      }
-      if(it.discType==='percent' && val>100){
-        it.discType='amount';
-        if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.remove('active')); seg.querySelector('button[data-v="amount"]')?.classList.add('active'); }
-      }
-      if(val===0){
-        it.discType='none';
-        if(seg){ seg.querySelectorAll('button').forEach(b=>b.classList.remove('active')); seg.querySelector('button[data-a="discNone"]')?.classList.add('active'); }
-      }
-      const row=el.closest('tr'); const c=computeLine(it);
-      row.querySelector('.lineTotal').textContent = '$'+fmt(c.total);
-      updateTotalsUI();
     };
   });
   updateTotalsUI();
@@ -546,34 +518,108 @@ function updateBodegaPanel(){
   box.textContent = items.length ? items.map(x=>`${x.qty}× ${x.title} (${x.code})`).join(' · ') : 'Sin sugerencias por ahora';
 }
 
-/* ===== Métodos de pago ===== */
-let currentMethod=null;
-document.querySelectorAll('.payBtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.payBtn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMethod = btn.dataset.method;
-    document.getElementById('efectivoBox').style.display = (currentMethod==='efectivo') ? 'block' : 'none';
-    updateVuelto();
-  });
-});
-document.getElementById('pagaCon').addEventListener('input', updateVuelto);
-function updateVuelto(){
-  const total = computeTotals().totalCompra;
-  const pago = readMoney('pagaCon');
-  const vuelto = Math.max(0, pago - total);
-  document.getElementById('vueltoDisplay').textContent = '$' + fmt(vuelto);
+/* ===== Métodos de pago / Pago dividido ===== */
+const methodsButtons = Array.from(document.querySelectorAll('.payBtn'));
+const detailsMap = {
+  efectivo: document.querySelector('.payDetail[data-detail="efectivo"]'),
+  debito: document.querySelector('.payDetail[data-detail="debito"]'),
+  credito: document.querySelector('.payDetail[data-detail="credito"]'),
+  transferencia: document.querySelector('.payDetail[data-detail="transferencia"]'),
+};
+attachMoneyFormatters(document.getElementById('payDetails'));
+
+const splitToggle = document.getElementById('splitToggle');
+const splitBar = document.getElementById('splitBar');
+
+/* Estado de selección: en split => hasta 2; sin split => 1 */
+let activeOrder = []; // mantiene el orden de selección
+function setActive(method, on){
+  const btn = methodsButtons.find(b=>b.dataset.method===method);
+  if(!btn) return;
+
+  if(on){
+    if(!btn.classList.contains('active')){
+      // si ya hay 2 activos en split, reemplazamos el más antiguo
+      if(splitToggle.checked && activeOrder.length>=2){
+        const first = activeOrder.shift();
+        setActive(first,false);
+      }
+      btn.classList.add('active');
+      activeOrder.push(method);
+    }
+  }else{
+    btn.classList.remove('active');
+    activeOrder = activeOrder.filter(m=>m!==method);
+  }
+  updateDetailsVisibility();
 }
 
-/* ===== Split ===== */
-const splitToggle=document.getElementById('splitToggle');
-splitToggle.addEventListener('change', ()=>{
-  const bar=document.getElementById('splitBar');
-  bar.style.background = splitToggle.checked
+function clearAllActive(){
+  methodsButtons.forEach(b=>b.classList.remove('active'));
+  activeOrder = [];
+  updateDetailsVisibility();
+}
+
+function updateDetailsVisibility(){
+  const isSplit = splitToggle.checked;
+
+  // Mostrar EFECTIVO (con vuelto) solo si está activo
+  const cashActive = activeOrder.includes('efectivo');
+  detailsMap.efectivo.style.display = cashActive ? 'block' : 'none';
+
+  // Para otros métodos: solo si Split está activo y el método está activo -> mostrar "PAGA CON"
+  ['debito','credito','transferencia'].forEach(m=>{
+    detailsMap[m].style.display = (isSplit && activeOrder.includes(m)) ? 'block' : 'none';
+  });
+
+  // Si split está OFF y no es efectivo, no hay inputs visibles
+  if(!isSplit && !cashActive){
+    detailsMap.debito.style.display =
+    detailsMap.credito.style.display =
+    detailsMap.transferencia.style.display = 'none';
+  }
+
+  // Barra visual del split
+  splitBar.style.background = isSplit
     ? 'linear-gradient(to right,#FF6B4A 50%,#8B5CF6 50%)'
     : 'linear-gradient(to right,#537BFF 100%,#FF70D7 0%)';
-  saveUI();
+
+  updateVuelto();
+}
+
+methodsButtons.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const method = btn.dataset.method;
+    if(splitToggle.checked){
+      // Split: toggle (max 2)
+      const on = !btn.classList.contains('active');
+      setActive(method,on);
+    }else{
+      // No split: selección única
+      clearAllActive();
+      setActive(method,true);
+    }
+  });
 });
+
+splitToggle.addEventListener('change', ()=>{
+  if(!splitToggle.checked){
+    // al desactivar split mantenemos solo el último activo
+    const keep = activeOrder[activeOrder.length-1];
+    clearAllActive();
+    if(keep) setActive(keep,true);
+  }
+  updateDetailsVisibility();
+});
+
+/* ===== Efectivo: vuelto dinámico ===== */
+document.getElementById('in_efectivo').addEventListener('input', updateVuelto);
+function updateVuelto(){
+  const total = computeTotals().totalCompra;
+  const pagoEf = readMoney('in_efectivo');
+  const vuelto = Math.max(0, pagoEf - total);
+  document.getElementById('vueltoDisplay').textContent = '$' + fmt(vuelto);
+}
 
 /* ===== Guardar carro ===== */
 document.getElementById('saveCartBtn').addEventListener('click', ()=>{
@@ -666,60 +712,79 @@ omni.addEventListener('input', ()=>{
 document.addEventListener('click',(e)=>{ if(!results.contains(e.target) && e.target!==omni){ hideSuggestions(); } });
 
 async function addByCode(code){
-  const now=Date.now();
-  if(lastScan.code===code && (now-lastScan.at)<500) return;
-  lastScan={code,at:now};
   const products=await loadProductsCached();
   const p=products.find(r=>r.code===code);
   if(!p){ toast('Código no encontrado','err'); beepError(); return; }
-  if((p.stock||0)<=0 && !document.getElementById('returnMode').checked){
-    if(!confirm('Sin stock. ¿Agregar igualmente?')) return;
-  }
   addOrInc(code,p);
 }
 function addOrInc(code, product){
-  const negative=document.getElementById('returnMode').checked;
-  const delta=negative? -1 : 1;
   const it=cart.get(code) || {code:product.code,title:product.title,pricePVP:product.pricePVP,qty:0,discType:'none',discValue:0};
-  it.qty += delta;
+  it.qty += 1;
   if(it.qty===0) cart.delete(code); else cart.set(code,it);
   renderCart();
 }
 
-/* ===== Outbox ===== */
-function getOutbox(){ try{ return JSON.parse(localStorage.getItem('pos_outbox')||'[]'); }catch{ return []; } }
-function setOutbox(a){ try{ localStorage.setItem('pos_outbox', JSON.stringify(a)); }catch{} }
-function updateOutboxUI(){ document.getElementById('retryOutboxBtn').style.display = getOutbox().length>0 ? 'inline-flex' : 'none'; }
-async function processOutbox(){ const q=getOutbox(); if(q.length===0) return; const rest=[]; for(const s of q){ try{ await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});}catch{rest.push(s);} } setOutbox(rest); updateOutboxUI(); }
-setInterval(processOutbox,30000);
+/* ===== Cobrar ===== */
+document.getElementById('finishBtnSticky').addEventListener('click', cobrar);
 
-/* ===== Cobro ===== */
 async function cobrar(){
   if(cart.size===0){ toast('Carrito vacío','err'); beepError(); focusOmni(); return; }
   const sums=computeTotals();
-  let mainMethod=currentMethod||'debito';
-  let payments=[];
-  if(!splitToggle.checked){
-    const cashGiven=readMoney('pagaCon');
-    payments.push({method:mainMethod, amount:sums.totalCompra, cashGiven:(mainMethod==='efectivo'?cashGiven:undefined)});
+  const isSplit = splitToggle.checked;
+
+  // Construir pagos
+  const payments=[];
+  if(!isSplit){
+    // Único método = último activo (si no, por defecto débito)
+    const method = activeOrder[activeOrder.length-1] || 'debito';
+    if(method==='efectivo'){
+      const cashGiven = readMoney('in_efectivo');
+      payments.push({method, amount:sums.totalCompra, cashGiven});
+    }else{
+      payments.push({method, amount:sums.totalCompra});
+    }
   }else{
-    const half=Math.round(sums.totalCompra/2);
-    payments.push({method:mainMethod, amount:half});
-    payments.push({method:'transferencia', amount:sums.totalCompra-half});
+    // Hasta 2 métodos activos
+    if(activeOrder.length===0){ toast('Selecciona métodos de pago.','err'); beepError(); return; }
+    let acc=0;
+    for(const m of activeOrder){
+      const field = document.getElementById('in_'+m);
+      const val = Math.max(0, readMoney(field||{value:'0'}));
+      if(m==='efectivo'){
+        const cashGiven = val; // en split, el input es "paga con"
+        payments.push({method:m, amount:Math.min(val, sums.totalCompra), cashGiven});
+        acc += Math.min(val, sums.totalCompra);
+      }else{
+        payments.push({method:m, amount:val});
+        acc += val;
+      }
+    }
+    if(acc !== sums.totalCompra){
+      toast(`La suma de pagos ($${fmt(acc)}) debe ser igual al total ($${fmt(sums.totalCompra)}).`, 'err');
+      beepError(); return;
+    }
   }
+
+  // Items
   const items=[...cart.values()].map(it=>({code:it.code,title:it.title,qty:it.qty,priceGross:it.pricePVP,discType:it.discType,discValue:Number(it.discValue||0)}));
-  const payload={items,payments,total:sums.totalCompra,discounts:sums.descuentosTotales,returnMode:document.getElementById('returnMode').checked};
+  const payload={items,payments,total:sums.totalCompra};
+
   try{
     await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'REGISTER_SALE', sale:payload})});
-    cart.clear(); renderCart(); focusOmni(); resetGlobalDiscount(); toast(payload.returnMode?'Cambio registrado ✅':'Venta registrada ✅');
+    cart.clear(); renderCart(); focusOmni(); resetGlobalDiscount();
+    // Reset pago dividido y UI
+    splitToggle.checked=false;
+    clearAllActive();
+    setActive('debito', true); // sugerencia por defecto
+    updateDetailsVisibility();
+    toast('Venta registrada ✅');
   }catch(e){
-    const q=getOutbox(); q.push({ts:Date.now(), payload}); setOutbox(q); updateOutboxUI(); toast('Sin conexión. Venta guardada offline.','err'); beepError();
+    toast('Sin conexión. Venta guardada offline.','err'); beepError();
   }
 }
 
-/* ===== Persistencia UI ===== */
-function saveUI(){ try{ localStorage.setItem('pos_ui', JSON.stringify({split: document.getElementById('splitToggle')?.checked || false})); }catch{} }
-function resetGlobalDiscount({shouldUpdate=true}={}){
+/* ===== Descuento global ===== */
+function resetGlobalDiscount(){
   const typeEl=document.getElementById('globalDiscType');
   const valueEl=document.getElementById('globalDiscValue');
   if(!typeEl||!valueEl) return;
@@ -729,55 +794,25 @@ function resetGlobalDiscount({shouldUpdate=true}={}){
   seg.dataset.state='percent';
   seg.querySelector('.pill-icon')?.classList.remove('active');
   seg.querySelector('.pill-percent')?.classList.add('active');
-  if(shouldUpdate) updateTotalsUI();
-}
-function loadUI(){
-  let u=null; try{u=JSON.parse(localStorage.getItem('pos_ui')||'null');}catch{}
-  const splitToggleEl=document.getElementById('splitToggle');
-  if(splitToggleEl&&u){ splitToggleEl.checked=!!u.split; }
-  resetGlobalDiscount({shouldUpdate:false});
   updateTotalsUI();
 }
 
-/* ===== Descuento global — lógica + UI del switch ===== */
-function syncPillVisual(){
-  const seg=document.getElementById('genSeg');
-  const type=document.getElementById('globalDiscType').value;
-  seg.dataset.state = (type==='amount')?'amount':'percent';
-  seg.querySelector('.pill-icon')?.classList.toggle('active', type==='amount');
-  seg.querySelector('.pill-percent')?.classList.toggle('active', type==='percent');
-}
-const genSeg=document.getElementById('genSeg');
-genSeg.addEventListener('click',(e)=>{
-  if(e.target.tagName!=='BUTTON') return;
-  const v=e.target.dataset.v;
-  document.getElementById('globalDiscType').value=v;
-  syncPillVisual();
-  updateTotalsUI();
-});
-const gInput=document.getElementById('globalDiscValue');
-gInput.addEventListener('focus',()=>{ if(readMoney(gInput)===0){ try{gInput.select();}catch{} gInput.value=''; } });
-gInput.addEventListener('input',()=>{
-  const v=readMoney(gInput);
-  if(v>100){
-    document.getElementById('globalDiscType').value='amount';
-  }else{
-    document.getElementById('globalDiscType').value='percent';
-  }
-  syncPillVisual();
-  updateTotalsUI();
-});
-
-/* ===== Ayuda & acciones ===== */
+/* ===== Ayuda ===== */
 document.getElementById('helpOpen').onclick=()=>document.getElementById('helpScrim').style.display='flex';
 document.getElementById('helpOpen2').onclick=()=>document.getElementById('helpScrim').style.display='flex';
 document.getElementById('helpClose').onclick=()=>document.getElementById('helpScrim').style.display='none';
-document.getElementById('finishBtnSticky').addEventListener('click', cobrar);
-document.getElementById('retryOutboxBtn')?.addEventListener('click', processOutbox);
 
 /* ===== Init ===== */
 function focusOmni(){ const el=document.getElementById('omniInput'); el?.focus(); el?.select?.(); }
-loadUI(); renderCart(); focusOmni(); updateOutboxUI(); processOutbox(); attachMoneyFormatters();
+// Pago dividido SIEMPRE inicia apagado
+function initSplitDefaultOff(){
+  splitToggle.checked=false;
+  clearAllActive();
+  setActive('debito', true); // por defecto
+  updateDetailsVisibility();
+}
+attachMoneyFormatters();
+renderCart(); focusOmni(); initSplitDefaultOff();
 </script>
 </body>
 </html>
