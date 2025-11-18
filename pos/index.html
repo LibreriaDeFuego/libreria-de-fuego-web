@@ -148,33 +148,40 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 .link-minimal{background:none;border:0;color:#fff;padding:0;font-weight:700}
 .link-minimal:hover{text-decoration:underline;opacity:.9}
 
-/* ---------- CORTINA EFECTIVO ---------- */
-.cashArea{ position:relative; }
-
-/* El botón debe ir POR ENCIMA */
-#btnEfectivo{
+/* ---------- CORTINAS MÉTODOS DE PAGO ---------- */
+.cashArea,
+.transferArea{
   position:relative;
-  z-index:3;            /* ↑ botón arriba */
+  margin-bottom:4px;
 }
 
-/* La cortina debe ir POR DEBAJO del botón */
+#btnEfectivo,
+#btnTransferencia{
+  position:relative;
+  z-index:1;
+}
+
+/* La cortina ahora empuja el contenido hacia abajo, no lo tapa */
 .cashCurtain{
-  position:absolute;
-  left:0; right:0;
-  top:50%;              /* nace desde la mitad del botón */
+  position:relative;
   transform-origin:top center;
-  transform:scaleY(0);
+  max-height:0;
+  opacity:0;
   background:var(--cashWhite);
   color:var(--darkblue);
   border-bottom-left-radius:16px;
   border-bottom-right-radius:16px;
-  box-shadow:0 14px 28px rgba(0,0,0,.22);
+  box-shadow:0 14px 28px rgba(0,0,0,.12);
   overflow:hidden;
-  transition:transform .28s ease;
-  padding:14px 16px;
-  z-index:1;            /* ↓ cortina debajo del botón */
+  padding:0 16px;
+  transition:max-height .28s ease, opacity .28s ease, padding .28s ease;
 }
-.cashCurtain.open{ transform:scaleY(1); }
+
+.cashCurtain.open{
+  max-height:220px;
+  opacity:1;
+  padding:14px 16px 16px 16px;
+}
 
 .cashField{display:flex;align-items:center;gap:10px;margin:8px 0}
 .cashLabel{font-size:16px;font-weight:700;letter-spacing:.2px;color:var(--darkblue)}
@@ -289,33 +296,47 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 
       <label class="small" style="margin-top:8px">Método de pago</label>
       <div class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
-        <button class="payBtn" data-method="debito">DÉBITO</button>
-        <button class="payBtn" data-method="credito">CRÉDITO</button>
-        <button class="payBtn" data-method="transferencia">TRANSFERENCIA</button>
+   <button class="payBtn" data-method="debito">DÉBITO</button>
+<button class="payBtn" data-method="credito">CRÉDITO</button>
 
-        <!-- Área EFECTIVO con cortina -->
-        <div class="cashArea">
-          <button class="payBtn" data-method="efectivo" id="btnEfectivo">EFECTIVO</button>
+<!-- Área TRANSFERENCIA con cortina (sin vuelto) -->
+<div class="transferArea">
+  <button class="payBtn" data-method="transferencia" id="btnTransferencia">TRANSFERENCIA</button>
 
-          <!-- Cortina blanca que nace desde la mitad del botón -->
-          <div id="efectivoCurtain" class="cashCurtain" aria-hidden="true">
-            <div class="cashField">
-              <span class="cashLabel">PAGA CON</span>
-              <div class="underWrap">
-                <span class="prefix">$</span>
-                <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto entregado en efectivo">
-              </div>
-            </div>
+  <div id="transferCurtain" class="cashCurtain" aria-hidden="true">
+    <div class="cashField">
+      <span class="cashLabel">MONTO TRANSFERENCIA</span>
+      <div class="underWrap">
+        <span class="prefix">$</span>
+        <input id="transferMonto" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto transferido">
+      </div>
+    </div>
+  </div>
+</div>
 
-            <div class="cashField vueltoRow">
-              <span class="cashLabel">VUELTO</span>
-              <div class="underWrap">
-                <span class="prefix">$</span>
-                <span id="vueltoValue" class="vueltoValue">0</span>
-              </div>
-            </div>
-          </div>
-        </div>
+<!-- Área EFECTIVO con cortina -->
+<div class="cashArea">
+  <button class="payBtn" data-method="efectivo" id="btnEfectivo">EFECTIVO</button>
+
+  <div id="efectivoCurtain" class="cashCurtain" aria-hidden="true">
+    <div class="cashField">
+      <span class="cashLabel">PAGA CON</span>
+      <div class="underWrap">
+        <span class="prefix">$</span>
+        <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto entregado en efectivo">
+      </div>
+    </div>
+
+    <div class="cashField vueltoRow">
+      <span class="cashLabel">VUELTO</span>
+      <div class="underWrap">
+        <span class="prefix">$</span>
+        <span id="vueltoValue" class="vueltoValue">0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
         <!-- /Área EFECTIVO -->
       </div>
 
@@ -574,30 +595,77 @@ function updateBodegaPanel(){
   box.textContent = items.length ? items.map(x=>`${x.qty}× ${x.title} (${x.code})`).join(' · ') : 'Sin sugerencias por ahora';
 }
 
-/* -------- Pago / EFECTIVO ---------- */
-let currentMethod=null;
-const btnEfectivo = document.getElementById('btnEfectivo');
-const curtain = document.getElementById('efectivoCurtain');
+/* -------- Métodos de pago + cortinas ---------- */
+let currentMethod = null;
+const cashCurtain = document.getElementById('efectivoCurtain');
+const transferCurtain = document.getElementById('transferCurtain');
+const payButtons = Array.from(document.querySelectorAll('.payBtn'));
 
-document.querySelectorAll('.payBtn').forEach(btn=>{
+function toggleCurtain(el){
+  if(!el) return;
+  const isOpen = el.classList.contains('open');
+  if(isOpen){
+    el.classList.remove('open');
+    el.setAttribute('aria-hidden','true');
+  }else{
+    el.classList.add('open');
+    el.setAttribute('aria-hidden','false');
+  }
+}
+
+function closeCurtain(el){
+  if(!el) return;
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden','true');
+}
+
+payButtons.forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    document.querySelectorAll('.payBtn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    currentMethod = btn.dataset.method;
+    const method = btn.dataset.method;
+    const splitToggleEl = document.getElementById('splitToggle');
+    const splitOn = !!splitToggleEl && splitToggleEl.checked;
 
-    // Abrir/cerrar la cortina de efectivo
-    if(currentMethod==='efectivo'){
-      curtain.classList.add('open');
-      curtain.setAttribute('aria-hidden','false');
+    if(!splitOn){
+      // Modo normal: solo un método activo
+      payButtons.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentMethod = method;
     }else{
-      curtain.classList.remove('open');
-      curtain.setAttribute('aria-hidden','true');
+      // Modo pago dividido: máximo 2 métodos activos
+      if(btn.classList.contains('active')){
+        // Si ya estaba activo, se puede deseleccionar
+        btn.classList.remove('active');
+      }else{
+        const active = payButtons.filter(b=>b.classList.contains('active'));
+        if(active.length >= 2){
+          // Si ya hay 2, reemplazamos el primero por el nuevo
+          active[0].classList.remove('active');
+        }
+        btn.classList.add('active');
+      }
     }
+
+    // Cortina EFECTIVO: al presionar EFECTIVO, toggle (baja/sube)
+    if(method === 'efectivo'){
+      toggleCurtain(cashCurtain);
+    }else if(!splitOn){
+      // en modo normal, otros métodos cierran la cortina
+      closeCurtain(cashCurtain);
+    }
+
+    // Cortina TRANSFERENCIA: igual lógica, pero sin vuelto
+    if(method === 'transferencia'){
+      toggleCurtain(transferCurtain);
+    }else if(!splitOn){
+      closeCurtain(transferCurtain);
+    }
+
     updateVuelto();
   });
 });
 
 document.getElementById('pagaCon').addEventListener('input', updateVuelto);
+
 function updateVuelto(){
   const total = computeTotals().totalCompra;
   const pago = readMoney('pagaCon');
@@ -614,6 +682,15 @@ splitToggle.addEventListener('change', ()=>{
   bar.style.background = splitToggle.checked
     ? 'linear-gradient(to right,#FF6B4A 50%,#8B5CF6 50%)'
     : 'linear-gradient(to right,#537BFF 100%,#FF70D7 0%)';
+
+  // Si se apaga el pago dividido, dejamos solo un método activo
+  if(!splitToggle.checked){
+    const active = Array.from(document.querySelectorAll('.payBtn.active'));
+    if(active.length > 1){
+      active.slice(1).forEach(b=>b.classList.remove('active'));
+    }
+  }
+
   saveUI();
 });
 
@@ -734,19 +811,56 @@ setInterval(processOutbox,30000);
 
 async function cobrar(){
   if(cart.size===0){ toast('Carrito vacío','err'); beepError(); focusOmni(); return; }
-  const sums=computeTotals();
-  let mainMethod=currentMethod||'debito';
-  let payments=[];
-  if(!splitToggle.checked){
-    const cashGiven=readMoney('pagaCon');
-    payments.push({method:mainMethod, amount:sums.totalCompra, cashGiven:(mainMethod==='efectivo'?cashGiven:undefined)});
+
+  const sums = computeTotals();
+  const splitOn = document.getElementById('splitToggle')?.checked;
+  const activeMethods = Array.from(document.querySelectorAll('.payBtn.active')).map(b=>b.dataset.method);
+  let payments = [];
+
+  if(!splitOn || activeMethods.length <= 1){
+    // Modo normal o solo 1 método seleccionado aunque esté activo el pago dividido
+    const method = activeMethods[0] || currentMethod || 'debito';
+    const cashGiven = readMoney('pagaCon');
+    payments.push({
+      method,
+      amount: sums.totalCompra,
+      cashGiven: (method === 'efectivo' ? cashGiven : undefined)
+    });
   }else{
-    const half=Math.round(sums.totalCompra/2);
-    payments.push({method:mainMethod, amount:half});
-    payments.push({method:'transferencia', amount:sums.totalCompra-half});
+    // Pago dividido: usar los 2 métodos elegidos
+    const [m1, m2] = activeMethods;
+    const total = sums.totalCompra;
+    const half = Math.round(total / 2);
+
+    payments.push({ method: m1, amount: half });
+    payments.push({ method: m2, amount: total - half });
   }
-  const items=[...cart.values()].map(it=>({code:it.code,title:it.title,qty:it.qty,priceGross:it.pricePVP,discType:it.discType,discValue:Number(it.discValue||0)}));
-  const payload={items,payments,total:sums.totalCompra,discounts:sums.descuentosTotales,returnMode:document.getElementById('returnMode').checked};
+
+  const items = [...cart.values()].map(it=>({
+    code:it.code,
+    title:it.title,
+    qty:it.qty,
+    priceGross:it.pricePVP,
+    discType:it.discType,
+    discValue:Number(it.discValue||0)
+  }));
+
+  const payload={
+    items,
+    payments,
+    total:sums.totalCompra,
+    discounts:sums.descuentosTotales,
+    returnMode:document.getElementById('returnMode').checked
+  };
+
+  try{
+    await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'REGISTER_SALE', sale:payload})});
+    cart.clear(); renderCart(); focusOmni(); resetGlobalDiscount(); toast(payload.returnMode?'Cambio registrado ✅':'Venta registrada ✅');
+  }catch(e){
+    const q=getOutbox(); q.push({ts:Date.now(), payload}); setOutbox(q); updateOutboxUI(); toast('Sin conexión. Venta guardada offline.','err'); beepError();
+  }
+}
+
   try{
     await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'REGISTER_SALE', sale:payload})});
     cart.clear(); renderCart(); focusOmni(); resetGlobalDiscount(); toast(payload.returnMode?'Cambio registrado ✅':'Venta registrada ✅');
