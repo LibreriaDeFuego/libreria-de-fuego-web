@@ -296,48 +296,46 @@ td input[type="number"], td input[data-a="discValue"]{padding:8px;border-radius:
 
       <label class="small" style="margin-top:8px">Método de pago</label>
       <div class="line" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:6px">
-   <button class="payBtn" data-method="debito">DÉBITO</button>
-<button class="payBtn" data-method="credito">CRÉDITO</button>
+        <button class="payBtn" data-method="debito">DÉBITO</button>
+        <button class="payBtn" data-method="credito">CRÉDITO</button>
 
-<!-- Área TRANSFERENCIA con cortina (sin vuelto) -->
-<div class="transferArea">
-  <button class="payBtn" data-method="transferencia" id="btnTransferencia">TRANSFERENCIA</button>
+        <!-- Área TRANSFERENCIA con cortina (sin vuelto) -->
+        <div class="transferArea">
+          <button class="payBtn" data-method="transferencia" id="btnTransferencia">TRANSFERENCIA</button>
 
-  <div id="transferCurtain" class="cashCurtain" aria-hidden="true">
-    <div class="cashField">
-      <span class="cashLabel">MONTO TRANSFERENCIA</span>
-      <div class="underWrap">
-        <span class="prefix">$</span>
-        <input id="transferMonto" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto transferido">
-      </div>
-    </div>
-  </div>
-</div>
+          <div id="transferCurtain" class="cashCurtain" aria-hidden="true">
+            <div class="cashField">
+              <span class="cashLabel">MONTO TRANSFERENCIA</span>
+              <div class="underWrap">
+                <span class="prefix">$</span>
+                <input id="transferMonto" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto transferido">
+              </div>
+            </div>
+          </div>
+        </div>
 
-<!-- Área EFECTIVO con cortina -->
-<div class="cashArea">
-  <button class="payBtn" data-method="efectivo" id="btnEfectivo">EFECTIVO</button>
+        <!-- Área EFECTIVO con cortina -->
+        <div class="cashArea">
+          <button class="payBtn" data-method="efectivo" id="btnEfectivo">EFECTIVO</button>
 
-  <div id="efectivoCurtain" class="cashCurtain" aria-hidden="true">
-    <div class="cashField">
-      <span class="cashLabel">PAGA CON</span>
-      <div class="underWrap">
-        <span class="prefix">$</span>
-        <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto entregado en efectivo">
-      </div>
-    </div>
+          <div id="efectivoCurtain" class="cashCurtain" aria-hidden="true">
+            <div class="cashField">
+              <span class="cashLabel">PAGA CON</span>
+              <div class="underWrap">
+                <span class="prefix">$</span>
+                <input id="pagaCon" type="text" inputmode="numeric" value="0" data-format="money" class="underInput" aria-label="Monto entregado en efectivo">
+              </div>
+            </div>
 
-    <div class="cashField vueltoRow">
-      <span class="cashLabel">VUELTO</span>
-      <div class="underWrap">
-        <span class="prefix">$</span>
-        <span id="vueltoValue" class="vueltoValue">0</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-        <!-- /Área EFECTIVO -->
+            <div class="cashField vueltoRow">
+              <span class="cashLabel">VUELTO</span>
+              <div class="underWrap">
+                <span class="prefix">$</span>
+                <span id="vueltoValue" class="vueltoValue">0</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="line" style="align-items:center;justify-content:space-between;margin-top:8px">
@@ -665,7 +663,6 @@ payButtons.forEach(btn=>{
 });
 
 document.getElementById('pagaCon').addEventListener('input', updateVuelto);
-
 function updateVuelto(){
   const total = computeTotals().totalCompra;
   const pago = readMoney('pagaCon');
@@ -836,7 +833,7 @@ async function cobrar(){
     payments.push({ method: m2, amount: total - half });
   }
 
-  const items = [...cart.values()].map(it=>({
+  const items=[...cart.values()].map(it=>({
     code:it.code,
     title:it.title,
     qty:it.qty,
@@ -852,14 +849,6 @@ async function cobrar(){
     discounts:sums.descuentosTotales,
     returnMode:document.getElementById('returnMode').checked
   };
-
-  try{
-    await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'REGISTER_SALE', sale:payload})});
-    cart.clear(); renderCart(); focusOmni(); resetGlobalDiscount(); toast(payload.returnMode?'Cambio registrado ✅':'Venta registrada ✅');
-  }catch(e){
-    const q=getOutbox(); q.push({ts:Date.now(), payload}); setOutbox(q); updateOutboxUI(); toast('Sin conexión. Venta guardada offline.','err'); beepError();
-  }
-}
 
   try{
     await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'REGISTER_SALE', sale:payload})});
